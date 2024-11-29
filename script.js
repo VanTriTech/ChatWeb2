@@ -1646,6 +1646,23 @@ const menuHTML = `
     </label>
 </div>
 `;
+// ... existing code ...
+
+// Thêm nút Export/Import vào menu với chỉ icon
+const menuHTML = `
+<div class="data-actions">
+    <button onclick="exportData()" class="backup-btn" title="Sao lưu dữ liệu">
+        <i class="fas fa-download"></i>
+    </button>
+    <input type="file" id="restoreInput" 
+           accept=".json" 
+           onchange="importData(event)" 
+           style="display: none">
+    <label for="restoreInput" class="restore-btn" title="Khôi phục dữ liệu">
+        <i class="fas fa-upload"></i>
+    </label>
+</div>
+`;
 
 // Thêm vào sidebar hoặc menu profile
 document.querySelector('.user-profile-mini').insertAdjacentHTML('beforebegin', menuHTML);
