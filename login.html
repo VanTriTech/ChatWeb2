@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        
+        body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #ffd1dc, #e8f4f8);
+    margin: 0;
+    color: #4a4a4a;
+    font-family: 'Segoe UI', sans-serif;
+}
+/* Code mới - Container trong suốt với viền */
+.login-container {
+    width: 100%;
+    max-width: 380px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 35px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    animation: floatIn 0.6s ease-out;
+}
+        .login-container h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #1d9bf0;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+        }
+/* Code mới - Input fields với style cute */
+.form-group input {
+    width: 100%;
+    padding: 14px;
+    background: #fff;
+    border: 2px solid #ffd1dc;
+    border-radius: 12px;
+    color: #4a4a4a;
+    outline: none;
+    font-size: 15px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+.form-group input:focus {
+    border-color: #ff9eb5;
+    box-shadow: 0 0 0 3px rgba(255, 158, 181, 0.2);
+}
+/* Thêm mới - Animation nổi lên */
+@keyframes floatIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+
+        .form-group i {
+            margin-right: 8px;
+            color: #1d9bf0;
+        }
+        .form-group .input-container {
+            display: flex;
+            align-items: center;
+            background: #202327;
+            padding: 12px;
+            border-radius: 8px;
+        }
+/* Code mới - Button cute */
+button {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(45deg, #ff9eb5, #ffd1dc);
+    border: none;
+    border-radius: 12px;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 158, 181, 0.3);
+}
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 158, 181, 0.4);
+}
+        .note {
+            text-align: center;
+            margin-top: 20px;
+            color: #aaa;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h2>Đăng nhập</h2>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">Tên người dùng</label>
+                <div class="input-container">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="username" placeholder="Nhập tên người dùng" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="password">Mật khẩu</label>
+                <div class="input-container">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" placeholder="Nhập mật khẩu" required>
+                </div>
+            </div>
+            <button type="submit">Đăng nhập</button>
+        </form>
+        <p class="note">Chưa có tài khoản? Liên hệ quản trị viên.</p>
+    </div>
+    <script src="login.js"></script>
+</body>
+</html>
