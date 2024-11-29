@@ -56,19 +56,16 @@
                 </div>
                 <i class="fas fa-ellipsis" onclick="handleLogout()"></i>
             </div>
-            <div class="data-actions">
-    <button onclick="exportData()" class="backup-btn">
-        <i class="fas fa-download"></i> Sao lưu
-    </button>
-    <button onclick="updateData()" class="update-btn">
-        <i class="fas fa-sync"></i> Cập nhật
+<div class="data-actions">
+    <button onclick="exportData()" class="icon-btn backup-btn" title="Sao lưu">
+        <i class="fas fa-download"></i>
     </button>
     <input type="file" id="restoreInput" 
            accept=".json" 
            onchange="importData(event)" 
            style="display: none">
-    <label for="restoreInput" class="restore-btn">
-        <i class="fas fa-upload"></i> Khôi phục
+    <label for="restoreInput" class="icon-btn restore-btn" title="Khôi phục">
+        <i class="fas fa-upload"></i>
     </label>
 </div>
         </aside>
