@@ -150,6 +150,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const contentSections = document.querySelectorAll('.content-section');
     
 
+function initializePostForm() {
+    const postInput = document.querySelector('.post-input');
+    const mediaInput = document.querySelector('#media-input');
+    const postButton = document.querySelector('.post-button');
+    const mediaPreview = document.querySelector('.media-preview');
     let selectedMedia = [];
 
     // Navigation Tabs
@@ -179,12 +184,33 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 function loadForYouContent() {
     const forYouContainer = document.querySelector('#for-you-section .posts-container');
+    
+    // Thêm form đăng bài
     forYouContainer.innerHTML = `
-        <div class="empty-state">
-            <i class="far fa-folder-open"></i>
-            <p>Chưa có mục nào dành cho bạn</p>
+        <div class="create-post">
+            <div class="post-form">
+                <img src="${document.querySelector('.user-profile-mini img').src}" alt="Avatar" class="post-avatar">
+                <div class="post-input-container">
+                    <textarea class="post-input" placeholder="Bạn đang nghĩ gì?" oninput="autoResizeTextarea(this)"></textarea>
+                    <div class="post-actions">
+                        <label for="media-input" class="media-label">
+                            <i class="far fa-image"></i>
+                        </label>
+                        <input type="file" id="media-input" accept="image/*,video/*" multiple style="display: none">
+                        <button class="post-button" disabled>Đăng</button>
+                    </div>
+                    <div class="media-preview"></div>
+                </div>
+            </div>
         </div>
+        <div class="posts-list"></div>
     `;
+
+    // Khởi tạo các event listeners cho form đăng bài
+    initializePostForm();
+    
+    // Load các bài đăng dành cho trang index1
+    loadIndex1Posts();
 }
 
 function loadFollowingContent() {
@@ -197,37 +223,82 @@ function loadFollowingContent() {
     `;
 }
 
-    // Auto resize textarea
+    // Xử lý nhập text
     postInput.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = this.scrollHeight + 'px';
-        updatePostButton();
+        postButton.disabled = !this.value.trim() && selectedMedia.length === 0;
     });
 
     // Media Upload Handler
     mediaInput.addEventListener('change', function(e) {
         const files = Array.from(e.target.files);
         files.forEach(file => {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File quá lớn. Giới hạn 10MB.');
                 return;
             }
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
                 selectedMedia.push({
-                    type: mediaType,
-                    url: e.target.result,
-                    file: file
+                    type: file.type.startsWith('image/') ? 'image' : 'video',
+                    url: e.target.result
                 });
                 updateMediaPreview();
-                updatePostButton();
+                postButton.disabled = false;
             }
             reader.readAsDataURL(file);
         });
     });
+    postButton.addEventListener('click', function() {
+        const content = postInput.value.trim();
+        if (!content && selectedMedia.length === 0) return;
 
+        const post = {
+            id: Date.now(),
+            content: content,
+            media: selectedMedia,
+            author: {
+                name: document.querySelector('.user-profile-mini .user-name').textContent,
+                username: document.querySelector('.user-profile-mini .user-handle').textContent,
+                avatar: document.querySelector('.user-profile-mini img').src
+            },
+            timestamp: new Date().toISOString(),
+            isIndex1Post: true, // Đánh dấu bài đăng thuộc index1
+            likes: 0,
+            likes2: 0,
+            comments: []
+        };
+
+        // Lưu bài đăng
+        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+        posts.unshift(post);
+        localStorage.setItem('posts', JSON.stringify(posts));
+
+        // Reset form
+        postInput.value = '';
+        selectedMedia = [];
+        mediaPreview.innerHTML = '';
+        postButton.disabled = true;
+
+        // Reload bài đăng
+        loadIndex1Posts();
+    });
+}
+function loadIndex1Posts() {
+    const postsContainer = document.querySelector('.posts-list');
+    const posts = JSON.parse(localStorage.getItem('posts') || '[]')
+        .filter(post => post.isIndex1Post) // Chỉ lấy bài đăng của index1
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    postsContainer.innerHTML = posts.length ? '' : `
+        <div class="empty-state">
+            <i class="far fa-folder-open"></i>
+            <p>Chưa có bài đăng nào</p>
+        </div>
+    `;
+
+    posts.forEach(post => addPostToDOM(post));
+}
     // Update Media Preview
     function updateMediaPreview() {
         mediaPreview.innerHTML = selectedMedia.map((media, index) => `
