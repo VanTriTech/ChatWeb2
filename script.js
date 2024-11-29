@@ -206,7 +206,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 updateMediaPreview();
                 updatePostButton();
-                initializeFirebaseListeners();
             }
             reader.readAsDataURL(file);
         });
@@ -906,8 +905,8 @@ window.openImageModal = function(imageUrl, index, imagesArray) {
 
     // Initial load
     loadPosts();
+    initializeFirebaseListeners();
 });
-
 // Thêm hàm xóa bình luận
 window.deleteComment = function(postId, commentId) {
     if (confirm('Bạn có chắc muốn xóa bình luận này?')) {
