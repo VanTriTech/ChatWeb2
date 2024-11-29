@@ -392,47 +392,25 @@ function restoreCommentStates() {
 
 // Sửa lại hàm loadPosts
 function loadPosts() {
-    // Đọc từ localStorage như cũ
-    const localPosts = JSON.parse(localStorage.getItem('posts') || '[]');
+    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     
-    // Thêm mới: Đồng bộ với Firebase
-    firebase.database().ref('posts').once('value')
-        .then(snapshot => {
-            const firebasePosts = [];
-            snapshot.forEach(childSnapshot => {
-                firebasePosts.push(childSnapshot.val());
-            });
-            
-            // Merge posts từ cả hai nguồn và loại bỏ trùng lặp
-            const allPosts = [...localPosts];
-            firebasePosts.forEach(fbPost => {
-                if (!allPosts.find(p => p.id === fbPost.id)) {
-                    allPosts.push(fbPost);
-                }
-            });
-            
-            // Sắp xếp và hiển thị như cũ
-            allPosts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-            postsContainer.innerHTML = '';
-            allPosts.forEach(post => {
-                addPostToDOM(post);
-                setupCommentCollapse(post.id);
-                if (post.comments) {
-                    post.comments.forEach(comment => {
-                        if (comment.replies && comment.replies.length > 0) {
-                            setupReplyCollapse(comment.id);
-                        }
-                    });
-                }
-            });
-            
-            // Cập nhật localStorage với dữ liệu merged
-            localStorage.setItem('posts', JSON.stringify(allPosts));
-            
-            restoreCommentStates();
-            restoreReactionStates();
-        })
-        .catch(error => console.error('Lỗi khi load posts từ Firebase:', error));
+    // Xóa hết nội dung cũ trong container
+    postsContainer.innerHTML = '';
+    
+    // Sắp xếp posts theo thời gian mới nhất
+    posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    posts.forEach(post => {
+        addPostToDOM(post);
+        setupCommentCollapse(post.id);
+        post.comments.forEach(comment => {
+            if (comment.replies && comment.replies.length > 0) {
+                setupReplyCollapse(comment.id);
+            }
+        });
+    });
+    restoreCommentStates();
+    restoreReactionStates();
 }
 
 
@@ -611,58 +589,14 @@ function formatTime(timestamp) {
     
     // Thêm số 0 phía trước nếu phút < 10
     minutes = minutes < 10 ? '0' + minutes : minutes;
-    
+    async function savePost(post) {
     return `${day} tháng ${month} năm ${year} lúc ${hours}:${minutes}`;
 }
 
-function loadPosts() {
-    // Hiển thị posts từ localStorage trước
-    const localPosts = JSON.parse(localStorage.getItem('posts') || '[]');
-    postsContainer.innerHTML = '';
-    localPosts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    localPosts.forEach(post => {
-        addPostToDOM(post);
-        setupCommentCollapse(post.id);
-        if (post.comments) {
-            post.comments.forEach(comment => {
-                if (comment.replies && comment.replies.length > 0) {
-                    setupReplyCollapse(comment.id);
-                }
-            });
-        }
-    });
-    
-    // Khôi phục trạng thái
-    restoreCommentStates();
-    restoreReactionStates();
-
-    // Sau đó đồng bộ với Firebase
-    firebase.database().ref('posts').once('value')
-        .then(snapshot => {
-            const firebasePosts = [];
-            snapshot.forEach(childSnapshot => {
-                firebasePosts.push(childSnapshot.val());
-            });
-            
-            // Merge và cập nhật localStorage
-            const allPosts = [...localPosts];
-            let hasNewPosts = false;
-            
-            firebasePosts.forEach(fbPost => {
-                if (!allPosts.find(p => p.id === fbPost.id)) {
-                    allPosts.unshift(fbPost);
-                    hasNewPosts = true;
-                }
-            });
-            
-            if (hasNewPosts) {
-                allPosts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                localStorage.setItem('posts', JSON.stringify(allPosts));
-                // Tải lại trang chỉ khi có bài viết mới
-                location.reload();
-            }
-        })
-        .catch(error => console.error('Lỗi khi load posts từ Firebase:', error));
+function savePost(post) {
+    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    posts.unshift(post); // Thêm post mới vào đầu mảng
+    localStorage.setItem('posts', JSON.stringify(posts));
 }
 
 
@@ -944,8 +878,8 @@ window.openImageModal = function(imageUrl, index, imagesArray) {
 
     // Initial load
     loadPosts();
-    initializeFirebaseListeners();
 });
+
 // Thêm hàm xóa bình luận
 window.deleteComment = function(postId, commentId) {
     if (confirm('Bạn có chắc muốn xóa bình luận này?')) {
@@ -1033,7 +967,7 @@ window.editComment = function(postId, commentId) {
 document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('isLoggedIn') !== 'true') {
         // Chưa đăng nhập, chuyển về trang login
-        window.location.replace('https://vantritech.github.io/ChatWeb2/login.html');
+        window.location.replace('https://vantritech.github.io/Shop/login.html');
         return;
     }
     
@@ -1046,7 +980,7 @@ function handleLogout() {
     if (confirm("Bạn có chắc chắn muốn đăng xuất?")) {
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('currentUser');
-        window.location.replace('https://vantritech.github.io/ChatWeb2/login.html');
+        window.location.replace('https://vantritech.github.io/Shop/login.html');
     }
 }
 // Thêm hàm xử lý reaction
@@ -1755,33 +1689,4 @@ function addWowAnimation(button) {
     setTimeout(() => {
         wowIcon.classList.remove('wow-animation');
     }, 500);
-}
-// Thêm mới: Theo dõi thay đổi realtime
-function initializeFirebaseListeners() {
-    const postsRef = firebase.database().ref('posts');
-    
-    postsRef.on('child_added', snapshot => {
-        const newPost = snapshot.val();
-        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        if (!posts.find(p => p.id === newPost.id)) {
-            posts.unshift(newPost);
-            localStorage.setItem('posts', JSON.stringify(posts));
-            addPostToDOM(newPost);
-        }
-    });
-    
-    postsRef.on('child_changed', snapshot => {
-        const updatedPost = snapshot.val();
-        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        const index = posts.findIndex(p => p.id === updatedPost.id);
-        if (index !== -1) {
-            posts[index] = updatedPost;
-            localStorage.setItem('posts', JSON.stringify(posts));
-            // Cập nhật UI cho post đã thay đổi
-            const postElement = document.querySelector(`[data-post-id="${updatedPost.id}"]`);
-            if (postElement) {
-                postElement.replaceWith(createPostElement(updatedPost));
-            }
-        }
-    });
 }
