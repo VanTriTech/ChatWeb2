@@ -163,8 +163,6 @@ async function getAIResponse(message, mediaUrls = []) {
         ${mediaUrls.length > 0 ? 'Có ảnh/video kèm theo, hãy bình luận ngắn gọn.' : ''}
         
         Trả lời tin nhắn sau một cách TỰC NHIÊN và CỰC KỲ NGẮN GỌN: "${message}"`;
-        
-        Trả lời tin nhắn sau: "${message}"`;
 
         const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
@@ -180,10 +178,10 @@ async function getAIResponse(message, mediaUrls = []) {
                         }]
                     }],
                     generationConfig: {
-                        temperature: 0.95,  // Tăng độ ngẫu nhiên
+                        temperature: 0.9,
                         topK: 40,
                         topP: 0.95,
-                        maxOutputTokens: 50  // Giới hạn độ dài output
+                        maxOutputTokens: 100
                     }
                 })
             }
@@ -193,7 +191,7 @@ async function getAIResponse(message, mediaUrls = []) {
         return data.candidates[0].content.parts[0].text;
     } catch (error) {
         console.error('API Error:', error);
-        return responses[Math.floor(Math.random() * responses.length)];
+        return null;
     }
 }
 // Thêm hàm getAIResponse2 (sau hàm getAIResponse)
@@ -290,7 +288,7 @@ async function getAIResponse2(message, mediaUrls = []) {
         - Du học master tại Mỹ
 
         QUY TẮC TRẢ LỜI:
-        - LUÔN trả lời CỰC KỲ ngắn gọn (2-3 câu)
+        - LUÔN trả lời CỰC KỲ ngắn gọn (1-2 câu)
         - Mix Tiếng Anh: omg, bestie, literally, slay
         - Viết tắt: k=không, j=gì, dc=được
         - Thêm emoji phù hợp mood
@@ -304,8 +302,6 @@ async function getAIResponse2(message, mediaUrls = []) {
         ${mediaUrls.length > 0 ? 'Có ảnh/video kèm theo, hãy bình luận ngắn gọn.' : ''}
         
         Trả lời tin nhắn sau một cách TỰ NHIÊN và CỰC KỲ NGẮN GỌN: "${message}"`;
-        
-        Trả lời tin nhắn sau: "${message}"`;
 
         const response = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY_2}`,
