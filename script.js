@@ -308,27 +308,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.deletePost = function(postId) {
     if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
-        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        const postIndex = posts.findIndex(p => p.id === postId);
-        
-        if (postIndex !== -1) {
-            // Xóa post khỏi mảng
-            posts.splice(postIndex, 1);
-            
-            // Cập nhật localStorage
-            localStorage.setItem('posts', JSON.stringify(posts));
-            
-            // Xóa post khỏi DOM
-            const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-            if (postElement) {
-                postElement.remove();
-            }
-          // Cập nhật lại tab Media
-            updateMediaTab();
-            
-            // Thông báo xóa thành công (tùy chọn)
-            console.log('Đã xóa bài viết thành công');
-        }
+        // Xóa từ Firebase
+        firebase.database().ref('posts/' + postId).remove()
+            .then(() => {
+                console.log('Đã xóa bài đăng thành công');
+                // Xóa khỏi DOM
+                const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+                if (postElement) {
+                    postElement.remove();
+                }
+                updateMediaTab();
+            })
+            .catch((error) => {
+                console.error('Lỗi khi xóa bài đăng:', error);
+            });
     }
 };
 
@@ -392,25 +385,33 @@ function restoreCommentStates() {
 
 // Sửa lại hàm loadPosts
 function loadPosts() {
-    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    
-    // Xóa hết nội dung cũ trong container
+    const postsContainer = document.getElementById('posts-container');
     postsContainer.innerHTML = '';
-    
-    // Sắp xếp posts theo thời gian mới nhất
-    posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    
-    posts.forEach(post => {
-        addPostToDOM(post);
-        setupCommentCollapse(post.id);
-        post.comments.forEach(comment => {
-            if (comment.replies && comment.replies.length > 0) {
-                setupReplyCollapse(comment.id);
-            }
+
+    // Đọc từ Firebase
+    firebase.database().ref('posts').orderByChild('timestamp')
+        .on('value', (snapshot) => {
+            const posts = [];
+            snapshot.forEach((childSnapshot) => {
+                posts.push(childSnapshot.val());
+            });
+            
+            // Sắp xếp theo thời gian mới nhất
+            posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            // Hiển thị posts
+            posts.forEach(post => {
+                addPostToDOM(post);
+                setupCommentCollapse(post.id);
+                if (post.comments) {
+                    post.comments.forEach(comment => {
+                        if (comment.replies && comment.replies.length > 0) {
+                            setupReplyCollapse(comment.id);
+                        }
+                    });
+                }
+            });
         });
-    });
-    restoreCommentStates();
-    restoreReactionStates();
 }
 
 
@@ -598,43 +599,13 @@ function savePost(post) {
     firebase.database().ref('posts/' + post.id).set(post)
         .then(() => {
             console.log('Đã lưu bài đăng thành công');
-            // Tải lại posts sau khi lưu
-            loadPosts();
+            loadPosts(); // Tải lại posts sau khi lưu
         })
         .catch((error) => {
             console.error('Lỗi khi lưu bài đăng:', error);
         });
 }
 
-function loadPosts() {
-    const postsContainer = document.getElementById('posts-container');
-    postsContainer.innerHTML = '';
-
-    // Đọc từ Firebase
-    firebase.database().ref('posts').orderByChild('timestamp')
-        .on('value', (snapshot) => {
-            const posts = [];
-            snapshot.forEach((childSnapshot) => {
-                posts.push(childSnapshot.val());
-            });
-            
-            // Sắp xếp theo thời gian mới nhất
-            posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-            
-            // Hiển thị posts
-            posts.forEach(post => {
-                addPostToDOM(post);
-                setupCommentCollapse(post.id);
-                if (post.comments) {
-                    post.comments.forEach(comment => {
-                        if (comment.replies && comment.replies.length > 0) {
-                            setupReplyCollapse(comment.id);
-                        }
-                    });
-                }
-            });
-        });
-}
 
 // Khai báo biến global cho image modal
 let currentImageIndex = 0;
@@ -765,10 +736,24 @@ function addPostToDOM(post) {
             <i class="${post.userLiked2 ? 'fas' : 'far'} fa-thumbs-up"></i>
             <span class="like2-count">${post.likes2 || 0}</span>
         </button>
+        
             <button class="action-button" onclick="toggleComments(${post.id})">
                 <i class="far fa-comment"></i>
                 <span class="comment-count">${post.comments ? post.comments.length : 0}</span>
             </button>
+            <div class="post-actions">
+        <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+            <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
+            <span class="like-count">${post.likes || 0}</span>
+        </button>
+        <button class="action-button like2-button ${post.userLiked2 ? 'liked' : ''}" onclick="toggleLike2(${post.id})">
+            <i class="${post.userLiked2 ? 'fas' : 'far'} fa-thumbs-up"></i>
+            <span class="like2-count">${post.likes2 || 0}</span>
+        </button>
+        <button class="action-button wow-button ${post.userWowed ? 'wowed' : ''}" onclick="toggleWow(${post.id})">
+            <i class="${post.userWowed ? 'fas' : 'far'} fa-surprise"></i>
+            <span class="wow-count">${post.wows || 0}</span>
+        </button>
         </div>
             <div class="comments-section" id="comments-${post.id}">
                 <div class="comment-form">
@@ -1426,56 +1411,66 @@ function setupReplyCollapse(commentId) {
 
 // Thêm hàm editPost
 window.editPost = function(postId) {
-    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    const post = posts.find(p => p.id === postId);
+    // Lấy reference đến post trong Firebase
+    const postRef = firebase.database().ref('posts/' + postId);
     
-    if (post) {
-        const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-        const postText = postElement.querySelector('.post-text');
-        const currentContent = post.content || '';
-        
-        // Tạo form chỉnh sửa
-        const editForm = document.createElement('div');
-        editForm.className = 'edit-post-form';
-        editForm.innerHTML = `
-            <textarea class="edit-post-input">${currentContent}</textarea>
-            <div class="edit-post-actions">
-                <button class="save-edit">Lưu</button>
-                <button class="cancel-edit">Hủy</button>
-            </div>
-        `;
-        
-        // Thay thế nội dung cũ bằng form
-        if (postText) {
-            postText.replaceWith(editForm);
-        } else {
-            postElement.querySelector('.post-content').insertBefore(
-                editForm,
-                postElement.querySelector('.post-media')
-            );
-        }
-        
-        // Auto resize textarea
-        const textarea = editForm.querySelector('textarea');
-        textarea.style.height = 'auto';
-        textarea.style.height = textarea.scrollHeight + 'px';
-        textarea.focus();
-        
-        // Xử lý nút Lưu
-        editForm.querySelector('.save-edit').addEventListener('click', function() {
-            const newContent = textarea.value.trim();
-            post.content = newContent;
-            localStorage.setItem('posts', JSON.stringify(posts));
+    postRef.once('value').then((snapshot) => {
+        const post = snapshot.val();
+        if (post) {
+            const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+            const postText = postElement.querySelector('.post-text');
+            const currentContent = post.content || '';
             
-            // Cập nhật UI
-            editForm.replaceWith(createPostText(newContent));
-        });
-        
-        // Xử lý nút Hủy
-        editForm.querySelector('.cancel-edit').addEventListener('click', function() {
-            editForm.replaceWith(createPostText(currentContent));
-        });
-    }
+            // Tạo form chỉnh sửa
+            const editForm = document.createElement('div');
+            editForm.className = 'edit-post-form';
+            editForm.innerHTML = `
+                <textarea class="edit-post-input">${currentContent}</textarea>
+                <div class="edit-post-actions">
+                    <button class="save-edit">Lưu</button>
+                    <button class="cancel-edit">Hủy</button>
+                </div>
+            `;
+            
+            // Thay thế nội dung cũ bằng form
+            if (postText) {
+                postText.replaceWith(editForm);
+            } else {
+                postElement.querySelector('.post-content').insertBefore(
+                    editForm,
+                    postElement.querySelector('.post-media')
+                );
+            }
+            
+            // Auto resize textarea
+            const textarea = editForm.querySelector('textarea');
+            textarea.style.height = 'auto';
+            textarea.style.height = textarea.scrollHeight + 'px';
+            textarea.focus();
+            
+            // Xử lý nút Lưu
+            editForm.querySelector('.save-edit').addEventListener('click', function() {
+                const newContent = textarea.value.trim();
+                
+                // Cập nhật trong Firebase
+                postRef.update({
+                    content: newContent
+                }).then(() => {
+                    console.log('Đã cập nhật bài đăng thành công');
+                    editForm.replaceWith(createPostText(newContent));
+                }).catch((error) => {
+                    console.error('Lỗi khi cập nhật bài đăng:', error);
+                });
+            });
+            
+            // Xử lý nút Hủy
+            editForm.querySelector('.cancel-edit').addEventListener('click', function() {
+                editForm.replaceWith(createPostText(currentContent));
+            });
+        }
+    }).catch((error) => {
+        console.error('Lỗi khi lấy dữ liệu bài đăng:', error);
+    });
 };
 
 // Hàm tạo element post text
@@ -1620,6 +1615,10 @@ window.editPostReactions = function(postId) {
                     <i class="fas fa-thumbs-up"></i>
                     <input type="number" id="thumbsCount" min="0" value="${post.likes2 || 0}">
                 </div>
+                <div class="reaction-input">
+                    <i class="fas fa-surprise"></i>
+                    <input type="number" id="wowCount" min="0" value="${post.wows || 0}">
+                </div>
             </div>
             <div class="modal-actions">
                 <button class="cancel-btn" onclick="closeReactionsModal()">Hủy</button>
@@ -1631,6 +1630,7 @@ window.editPostReactions = function(postId) {
     document.body.appendChild(modal);
     setTimeout(() => modal.classList.add('active'), 10);
 };
+
 
 window.closeReactionsModal = function() {
     const modal = document.querySelector('.edit-reactions-modal');
@@ -1646,22 +1646,64 @@ window.savePostReactions = function(postId) {
     
     const heartCount = parseInt(document.getElementById('heartCount').value) || 0;
     const thumbsCount = parseInt(document.getElementById('thumbsCount').value) || 0;
+    const wowCount = parseInt(document.getElementById('wowCount').value) || 0;
     
     // Cập nhật số lượng reactions
     post.likes = heartCount;
     post.likes2 = thumbsCount;
+    post.wows = wowCount;
     
     // Lưu vào localStorage
     localStorage.setItem('posts', JSON.stringify(posts));
     
     // Cập nhật UI
     const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-    postElement.querySelector('.like-count').textContent = heartCount;
-    postElement.querySelector('.like2-count').textContent = thumbsCount;
+    postElement.querySelector('.like-count').textContent = formatNumber(heartCount);
+    postElement.querySelector('.like2-count').textContent = formatNumber(thumbsCount);
+    postElement.querySelector('.wow-count').textContent = formatNumber(wowCount);
     
-    // Đóng modal
     closeReactionsModal();
-    
-    // Hiển thị thông báo thành công
     alert('Đã cập nhật reactions thành công!');
 };
+window.toggleWow = function(postId) {
+    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    const post = posts.find(p => p.id === postId);
+    const currentUser = document.querySelector('.profile-username').textContent;
+    
+    if (!post.wows) post.wows = 0;
+    if (!post.wowedBy) post.wowedBy = [];
+    
+    const wowButton = document.querySelector(`[data-post-id="${postId}"] .wow-button`);
+    const wowIcon = wowButton.querySelector('i');
+    const wowCount = wowButton.querySelector('.wow-count');
+    
+    if (post.wowedBy.includes(currentUser)) {
+        // Un-wow
+        post.wows--;
+        post.wowedBy = post.wowedBy.filter(user => user !== currentUser);
+        post.userWowed = false;
+        wowButton.classList.remove('wowed');
+        wowIcon.className = 'far fa-surprise';
+    } else {
+        // Wow
+        post.wows++;
+        post.wowedBy.push(currentUser);
+        post.userWowed = true;
+        wowButton.classList.add('wowed');
+        wowIcon.className = 'fas fa-surprise';
+        
+        addWowAnimation(wowButton);
+    }
+    
+    wowCount.textContent = formatNumber(post.wows);
+    localStorage.setItem('posts', JSON.stringify(posts));
+};
+
+// Thêm hiệu ứng animation cho wow
+function addWowAnimation(button) {
+    const wowIcon = button.querySelector('i');
+    wowIcon.classList.add('wow-animation');
+    setTimeout(() => {
+        wowIcon.classList.remove('wow-animation');
+    }, 500);
+}
