@@ -179,12 +179,22 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 function loadForYouContent() {
     const forYouContainer = document.querySelector('#for-you-section .posts-container');
-    // Thêm logic load nội dung "Dành cho bạn" ở đây
+    forYouContainer.innerHTML = `
+        <div class="empty-state">
+            <i class="far fa-folder-open"></i>
+            <p>Chưa có mục nào dành cho bạn</p>
+        </div>
+    `;
 }
 
 function loadFollowingContent() {
     const followingContainer = document.querySelector('#following-section .posts-container');
-    // Thêm logic load nội dung "Đang theo dõi" ở đây
+    followingContainer.innerHTML = `
+        <div class="empty-state">
+            <i class="far fa-folder-open"></i>
+            <p>Chưa có mục đang theo dõi</p>
+        </div>
+    `;
 }
 
     // Auto resize textarea
