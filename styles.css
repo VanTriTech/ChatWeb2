@@ -750,11 +750,12 @@ body {
     outline: none;
 }
 
-/* Responsive */
+/* Ẩn text trong tooltip trên mobile */
 @media (max-width: 768px) {
-    .post-media.single-image img {
-        max-height: 400px;
+    .icon-btn[title]::after {
+        display: none;
     }
+}
     
     .modal-content {
         width: 100%;
@@ -1646,16 +1647,17 @@ body {
 }
 /* Thay thế CSS cũ của data-actions bằng code mới */
 .data-actions {
-    padding: 8px;
+    padding: 4px;
     display: flex;
-    gap: 8px;
+    gap: 4px;
     border-top: 1px solid #2f3336;
     margin-top: auto;
+    justify-content: center; /* Căn giữa các nút */
 }
 
 .icon-btn {
-    width: 34px;
-    height: 34px;
+    width: 28px; /* Giảm kích thước nút */
+    height: 28px;
     border-radius: 50%;
     border: none;
     display: flex;
@@ -1664,13 +1666,15 @@ body {
     cursor: pointer;
     transition: all 0.2s;
     background: transparent;
-    color: #1d9bf0;
+    color: #71767b; /* Màu nhạt hơn */
+    padding: 0; /* Bỏ padding */
 }
 
 .icon-btn:hover {
     background: rgba(29, 155, 240, 0.1);
+    color: #1d9bf0;
 }
 
 .icon-btn i {
-    font-size: 16px;
+    font-size: 10px; /* Giảm kích thước icon */
 }
