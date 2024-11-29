@@ -8,6 +8,31 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="chat.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCdvGyyWPgUnIw9OhgGqDbPhjRM5K8jS_4",
+            authDomain: "chatweb2-e7bb7.firebaseapp.com", 
+            projectId: "chatweb2-e7bb7",
+            storageBucket: "chatweb2-e7bb7.firebasestorage.app",
+            messagingSenderId: "961903643000",
+            appId: "1:961903643000:web:d7c820340fe94630a9e08d",
+            measurementId: "G-B6T2XZZT0G"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        // Make Firebase services available globally
+        window.db = db;
+        window.storage = storage;
+    </script>
 </head>
 <body>
     <div class="wrapper">
