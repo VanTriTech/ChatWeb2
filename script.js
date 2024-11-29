@@ -594,11 +594,47 @@ function formatTime(timestamp) {
 }
 
 function savePost(post) {
-    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    posts.unshift(post); // Thêm post mới vào đầu mảng
-    localStorage.setItem('posts', JSON.stringify(posts));
+    // Lưu vào Firebase
+    firebase.database().ref('posts/' + post.id).set(post)
+        .then(() => {
+            console.log('Đã lưu bài đăng thành công');
+            // Tải lại posts sau khi lưu
+            loadPosts();
+        })
+        .catch((error) => {
+            console.error('Lỗi khi lưu bài đăng:', error);
+        });
 }
 
+function loadPosts() {
+    const postsContainer = document.getElementById('posts-container');
+    postsContainer.innerHTML = '';
+
+    // Đọc từ Firebase
+    firebase.database().ref('posts').orderByChild('timestamp')
+        .on('value', (snapshot) => {
+            const posts = [];
+            snapshot.forEach((childSnapshot) => {
+                posts.push(childSnapshot.val());
+            });
+            
+            // Sắp xếp theo thời gian mới nhất
+            posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            // Hiển thị posts
+            posts.forEach(post => {
+                addPostToDOM(post);
+                setupCommentCollapse(post.id);
+                if (post.comments) {
+                    post.comments.forEach(comment => {
+                        if (comment.replies && comment.replies.length > 0) {
+                            setupReplyCollapse(comment.id);
+                        }
+                    });
+                }
+            });
+        });
+}
 
 // Khai báo biến global cho image modal
 let currentImageIndex = 0;
