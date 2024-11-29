@@ -206,6 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 updateMediaPreview();
                 updatePostButton();
+                initializeFirebaseListeners();
             }
             reader.readAsDataURL(file);
         });
@@ -240,29 +241,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-async function createPost() {
-    const content = postInput.value.trim();
-    if (!content && selectedMedia.length === 0) return;
+    async function createPost() {
+        const content = postInput.value.trim();
+        if (!content && selectedMedia.length === 0) return;
 
-    const postId = Date.now();
-    const post = {
-        id: postId,
-        content: content,
-        author: {
-            name: profileName,
-            username: profileUsername,
-            avatar: document.querySelector('.profile-avatar img').src
-        },
-        media: selectedMedia,
-        reactions: {
-            likes: 0,
-            hearts: 0,
-            angry: 0
-        },
-        userReactions: {},
-        comments: [],
-        timestamp: new Date().toISOString()
-    };
+        const postId = Date.now();
+        const post = {
+            id: postId,
+            content: content,
+            author: {
+                name: profileName,
+                username: profileUsername,
+                avatar: document.querySelector('.profile-avatar img').src
+            },
+            media: selectedMedia,
+            reactions: {
+                likes: 0,
+                hearts: 0,
+                angry: 0
+            },
+            userReactions: {}, // Lưu reaction của từng user
+            comments: [],
+            timestamp: new Date().toISOString()
+        };
 
         // Add post to DOM
         addPostToDOM(post);
@@ -308,25 +309,28 @@ async function createPost() {
 
 window.deletePost = function(postId) {
     if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
-        // Xóa từ Firebase
-    firebase.database().ref('posts/' + postId).set(post)
-        .then(() => {
-            console.log('Đã đăng bài thành công');
+        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+        const postIndex = posts.findIndex(p => p.id === postId);
+        
+        if (postIndex !== -1) {
+            // Xóa post khỏi mảng
+            posts.splice(postIndex, 1);
             
-            // Reset form sau khi đăng thành công
-            postInput.value = '';
-            postInput.style.height = 'auto';
-            selectedMedia = [];
-            mediaPreview.style.display = 'none';
-            mediaPreview.innerHTML = '';
-            mediaInput.value = '';
-            updatePostButton();
-        })
-        .catch((error) => {
-            console.error('Lỗi khi đăng bài:', error);
-            alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại!');
-        });
-}
+            // Cập nhật localStorage
+            localStorage.setItem('posts', JSON.stringify(posts));
+            
+            // Xóa post khỏi DOM
+            const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+            if (postElement) {
+                postElement.remove();
+            }
+          // Cập nhật lại tab Media
+            updateMediaTab();
+            
+            // Thông báo xóa thành công (tùy chọn)
+            console.log('Đã xóa bài viết thành công');
+        }
+    }
 };
 
     window.toggleLike = function(postId) {
@@ -389,22 +393,29 @@ function restoreCommentStates() {
 
 // Sửa lại hàm loadPosts
 function loadPosts() {
-    const postsContainer = document.getElementById('posts-container');
-    postsContainer.innerHTML = '';
-
-    // Đọc từ Firebase
-    firebase.database().ref('posts').orderByChild('timestamp')
-        .on('value', (snapshot) => {
-            const posts = [];
-            snapshot.forEach((childSnapshot) => {
-                posts.push(childSnapshot.val());
+    // Đọc từ localStorage như cũ
+    const localPosts = JSON.parse(localStorage.getItem('posts') || '[]');
+    
+    // Thêm mới: Đồng bộ với Firebase
+    firebase.database().ref('posts').once('value')
+        .then(snapshot => {
+            const firebasePosts = [];
+            snapshot.forEach(childSnapshot => {
+                firebasePosts.push(childSnapshot.val());
             });
             
-            // Sắp xếp theo thời gian mới nhất
-            posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            // Merge posts từ cả hai nguồn và loại bỏ trùng lặp
+            const allPosts = [...localPosts];
+            firebasePosts.forEach(fbPost => {
+                if (!allPosts.find(p => p.id === fbPost.id)) {
+                    allPosts.push(fbPost);
+                }
+            });
             
-            // Hiển thị posts
-            posts.forEach(post => {
+            // Sắp xếp và hiển thị như cũ
+            allPosts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            postsContainer.innerHTML = '';
+            allPosts.forEach(post => {
                 addPostToDOM(post);
                 setupCommentCollapse(post.id);
                 if (post.comments) {
@@ -415,7 +426,14 @@ function loadPosts() {
                     });
                 }
             });
-        });
+            
+            // Cập nhật localStorage với dữ liệu merged
+            localStorage.setItem('posts', JSON.stringify(allPosts));
+            
+            restoreCommentStates();
+            restoreReactionStates();
+        })
+        .catch(error => console.error('Lỗi khi load posts từ Firebase:', error));
 }
 
 
@@ -599,15 +617,14 @@ function formatTime(timestamp) {
 }
 
 function savePost(post) {
-    // Lưu vào Firebase
+    // Lưu vào localStorage như cũ
+    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    posts.unshift(post);
+    localStorage.setItem('posts', JSON.stringify(posts));
+    
+    // Thêm mới: Đồng bộ với Firebase
     firebase.database().ref('posts/' + post.id).set(post)
-        .then(() => {
-            console.log('Đã lưu bài đăng thành công');
-            loadPosts(); // Tải lại posts sau khi lưu
-        })
-        .catch((error) => {
-            console.error('Lỗi khi lưu bài đăng:', error);
-        });
+        .catch(error => console.error('Lỗi khi lưu post lên Firebase:', error));
 }
 
 
@@ -1415,66 +1432,56 @@ function setupReplyCollapse(commentId) {
 
 // Thêm hàm editPost
 window.editPost = function(postId) {
-    // Lấy reference đến post trong Firebase
-    const postRef = firebase.database().ref('posts/' + postId);
+    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    const post = posts.find(p => p.id === postId);
     
-    postRef.once('value').then((snapshot) => {
-        const post = snapshot.val();
-        if (post) {
-            const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-            const postText = postElement.querySelector('.post-text');
-            const currentContent = post.content || '';
-            
-            // Tạo form chỉnh sửa
-            const editForm = document.createElement('div');
-            editForm.className = 'edit-post-form';
-            editForm.innerHTML = `
-                <textarea class="edit-post-input">${currentContent}</textarea>
-                <div class="edit-post-actions">
-                    <button class="save-edit">Lưu</button>
-                    <button class="cancel-edit">Hủy</button>
-                </div>
-            `;
-            
-            // Thay thế nội dung cũ bằng form
-            if (postText) {
-                postText.replaceWith(editForm);
-            } else {
-                postElement.querySelector('.post-content').insertBefore(
-                    editForm,
-                    postElement.querySelector('.post-media')
-                );
-            }
-            
-            // Auto resize textarea
-            const textarea = editForm.querySelector('textarea');
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
-            textarea.focus();
-            
-            // Xử lý nút Lưu
-            editForm.querySelector('.save-edit').addEventListener('click', function() {
-                const newContent = textarea.value.trim();
-                
-                // Cập nhật trong Firebase
-                postRef.update({
-                    content: newContent
-                }).then(() => {
-                    console.log('Đã cập nhật bài đăng thành công');
-                    editForm.replaceWith(createPostText(newContent));
-                }).catch((error) => {
-                    console.error('Lỗi khi cập nhật bài đăng:', error);
-                });
-            });
-            
-            // Xử lý nút Hủy
-            editForm.querySelector('.cancel-edit').addEventListener('click', function() {
-                editForm.replaceWith(createPostText(currentContent));
-            });
+    if (post) {
+        const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+        const postText = postElement.querySelector('.post-text');
+        const currentContent = post.content || '';
+        
+        // Tạo form chỉnh sửa
+        const editForm = document.createElement('div');
+        editForm.className = 'edit-post-form';
+        editForm.innerHTML = `
+            <textarea class="edit-post-input">${currentContent}</textarea>
+            <div class="edit-post-actions">
+                <button class="save-edit">Lưu</button>
+                <button class="cancel-edit">Hủy</button>
+            </div>
+        `;
+        
+        // Thay thế nội dung cũ bằng form
+        if (postText) {
+            postText.replaceWith(editForm);
+        } else {
+            postElement.querySelector('.post-content').insertBefore(
+                editForm,
+                postElement.querySelector('.post-media')
+            );
         }
-    }).catch((error) => {
-        console.error('Lỗi khi lấy dữ liệu bài đăng:', error);
-    });
+        
+        // Auto resize textarea
+        const textarea = editForm.querySelector('textarea');
+        textarea.style.height = 'auto';
+        textarea.style.height = textarea.scrollHeight + 'px';
+        textarea.focus();
+        
+        // Xử lý nút Lưu
+        editForm.querySelector('.save-edit').addEventListener('click', function() {
+            const newContent = textarea.value.trim();
+            post.content = newContent;
+            localStorage.setItem('posts', JSON.stringify(posts));
+            
+            // Cập nhật UI
+            editForm.replaceWith(createPostText(newContent));
+        });
+        
+        // Xử lý nút Hủy
+        editForm.querySelector('.cancel-edit').addEventListener('click', function() {
+            editForm.replaceWith(createPostText(currentContent));
+        });
+    }
 };
 
 // Hàm tạo element post text
@@ -1710,4 +1717,33 @@ function addWowAnimation(button) {
     setTimeout(() => {
         wowIcon.classList.remove('wow-animation');
     }, 500);
+}
+// Thêm mới: Theo dõi thay đổi realtime
+function initializeFirebaseListeners() {
+    const postsRef = firebase.database().ref('posts');
+    
+    postsRef.on('child_added', snapshot => {
+        const newPost = snapshot.val();
+        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+        if (!posts.find(p => p.id === newPost.id)) {
+            posts.unshift(newPost);
+            localStorage.setItem('posts', JSON.stringify(posts));
+            addPostToDOM(newPost);
+        }
+    });
+    
+    postsRef.on('child_changed', snapshot => {
+        const updatedPost = snapshot.val();
+        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+        const index = posts.findIndex(p => p.id === updatedPost.id);
+        if (index !== -1) {
+            posts[index] = updatedPost;
+            localStorage.setItem('posts', JSON.stringify(posts));
+            // Cập nhật UI cho post đã thay đổi
+            const postElement = document.querySelector(`[data-post-id="${updatedPost.id}"]`);
+            if (postElement) {
+                postElement.replaceWith(createPostElement(updatedPost));
+            }
+        }
+    });
 }
