@@ -1700,3 +1700,69 @@ function importData(event) {
     };
     reader.readAsText(file);
 }
+// Thêm vào cuối file
+function exportData() {
+    try {
+        const data = {
+            posts: JSON.parse(localStorage.getItem('posts') || '[]'),
+            timestamp: new Date().toISOString(),
+            version: '1.0'
+        };
+        
+        downloadJSON(data, `webchat_backup_${new Date().toISOString().slice(0,10)}.json`);
+        alert('Đã sao lưu dữ liệu thành công!');
+    } catch (error) {
+        alert('Lỗi khi sao lưu: ' + error.message);
+    }
+}
+
+function updateData() {
+    try {
+        const data = {
+            posts: JSON.parse(localStorage.getItem('posts') || '[]'),
+            timestamp: new Date().toISOString(),
+            version: '1.0'
+        };
+        
+        downloadJSON(data, `webchat_update_${new Date().toISOString().slice(0,10)}.json`);
+        alert('Đã cập nhật và sao lưu dữ liệu thành công!');
+    } catch (error) {
+        alert('Lỗi khi cập nhật: ' + error.message);
+    }
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            
+            if (!data.posts) {
+                throw new Error('File không đúng định dạng');
+            }
+            
+            localStorage.setItem('posts', JSON.stringify(data.posts));
+            location.reload();
+            
+            alert('Đã khôi phục dữ liệu thành công!');
+        } catch (error) {
+            alert('Lỗi khi khôi phục: ' + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function downloadJSON(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
