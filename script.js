@@ -729,24 +729,10 @@ function addPostToDOM(post) {
             <i class="${post.userLiked2 ? 'fas' : 'far'} fa-thumbs-up"></i>
             <span class="like2-count">${post.likes2 || 0}</span>
         </button>
-        
             <button class="action-button" onclick="toggleComments(${post.id})">
                 <i class="far fa-comment"></i>
                 <span class="comment-count">${post.comments ? post.comments.length : 0}</span>
             </button>
-            <div class="post-actions">
-        <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
-            <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
-            <span class="like-count">${post.likes || 0}</span>
-        </button>
-        <button class="action-button like2-button ${post.userLiked2 ? 'liked' : ''}" onclick="toggleLike2(${post.id})">
-            <i class="${post.userLiked2 ? 'fas' : 'far'} fa-thumbs-up"></i>
-            <span class="like2-count">${post.likes2 || 0}</span>
-        </button>
-        <button class="action-button wow-button ${post.userWowed ? 'wowed' : ''}" onclick="toggleWow(${post.id})">
-            <i class="${post.userWowed ? 'fas' : 'far'} fa-surprise"></i>
-            <span class="wow-count">${post.wows || 0}</span>
-        </button>
         </div>
             <div class="comments-section" id="comments-${post.id}">
                 <div class="comment-form">
@@ -967,7 +953,7 @@ window.editComment = function(postId, commentId) {
 document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('isLoggedIn') !== 'true') {
         // Chưa đăng nhập, chuyển về trang login
-        window.location.replace('https://vantritech.github.io/ChatWeb2/login.html');
+        window.location.replace('https://vantritech.github.io/Shop/login.html');
         return;
     }
     
@@ -980,7 +966,7 @@ function handleLogout() {
     if (confirm("Bạn có chắc chắn muốn đăng xuất?")) {
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('currentUser');
-        window.location.replace('https://vantritech.github.io/ChatWeb2/login.html');
+        window.location.replace('https://vantritech.github.io/Shop/login.html');
     }
 }
 // Thêm hàm xử lý reaction
@@ -1598,10 +1584,6 @@ window.editPostReactions = function(postId) {
                     <i class="fas fa-thumbs-up"></i>
                     <input type="number" id="thumbsCount" min="0" value="${post.likes2 || 0}">
                 </div>
-                <div class="reaction-input">
-                    <i class="fas fa-surprise"></i>
-                    <input type="number" id="wowCount" min="0" value="${post.wows || 0}">
-                </div>
             </div>
             <div class="modal-actions">
                 <button class="cancel-btn" onclick="closeReactionsModal()">Hủy</button>
@@ -1613,7 +1595,6 @@ window.editPostReactions = function(postId) {
     document.body.appendChild(modal);
     setTimeout(() => modal.classList.add('active'), 10);
 };
-
 
 window.closeReactionsModal = function() {
     const modal = document.querySelector('.edit-reactions-modal');
@@ -1629,64 +1610,22 @@ window.savePostReactions = function(postId) {
     
     const heartCount = parseInt(document.getElementById('heartCount').value) || 0;
     const thumbsCount = parseInt(document.getElementById('thumbsCount').value) || 0;
-    const wowCount = parseInt(document.getElementById('wowCount').value) || 0;
     
     // Cập nhật số lượng reactions
     post.likes = heartCount;
     post.likes2 = thumbsCount;
-    post.wows = wowCount;
     
     // Lưu vào localStorage
     localStorage.setItem('posts', JSON.stringify(posts));
     
     // Cập nhật UI
     const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-    postElement.querySelector('.like-count').textContent = formatNumber(heartCount);
-    postElement.querySelector('.like2-count').textContent = formatNumber(thumbsCount);
-    postElement.querySelector('.wow-count').textContent = formatNumber(wowCount);
+    postElement.querySelector('.like-count').textContent = heartCount;
+    postElement.querySelector('.like2-count').textContent = thumbsCount;
     
+    // Đóng modal
     closeReactionsModal();
+    
+    // Hiển thị thông báo thành công
     alert('Đã cập nhật reactions thành công!');
 };
-window.toggleWow = function(postId) {
-    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    const post = posts.find(p => p.id === postId);
-    const currentUser = document.querySelector('.profile-username').textContent;
-    
-    if (!post.wows) post.wows = 0;
-    if (!post.wowedBy) post.wowedBy = [];
-    
-    const wowButton = document.querySelector(`[data-post-id="${postId}"] .wow-button`);
-    const wowIcon = wowButton.querySelector('i');
-    const wowCount = wowButton.querySelector('.wow-count');
-    
-    if (post.wowedBy.includes(currentUser)) {
-        // Un-wow
-        post.wows--;
-        post.wowedBy = post.wowedBy.filter(user => user !== currentUser);
-        post.userWowed = false;
-        wowButton.classList.remove('wowed');
-        wowIcon.className = 'far fa-surprise';
-    } else {
-        // Wow
-        post.wows++;
-        post.wowedBy.push(currentUser);
-        post.userWowed = true;
-        wowButton.classList.add('wowed');
-        wowIcon.className = 'fas fa-surprise';
-        
-        addWowAnimation(wowButton);
-    }
-    
-    wowCount.textContent = formatNumber(post.wows);
-    localStorage.setItem('posts', JSON.stringify(posts));
-};
-
-// Thêm hiệu ứng animation cho wow
-function addWowAnimation(button) {
-    const wowIcon = button.querySelector('i');
-    wowIcon.classList.add('wow-animation');
-    setTimeout(() => {
-        wowIcon.classList.remove('wow-animation');
-    }, 500);
-}
