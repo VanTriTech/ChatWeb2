@@ -240,45 +240,77 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-    async function createPost() {
-        const content = postInput.value.trim();
-        if (!content && selectedMedia.length === 0) return;
+// THÊM đoạn code này
+async function createPost() {
+    const content = postInput.value.trim();
+    if (!content && selectedMedia.length === 0) return;
 
-        const postId = Date.now();
-        const post = {
-            id: postId,
-            content: content,
-            author: {
-                name: profileName,
-                username: profileUsername,
-                avatar: document.querySelector('.profile-avatar img').src
-            },
-            media: selectedMedia,
-            reactions: {
-                likes: 0,
-                hearts: 0,
-                angry: 0
-            },
-            userReactions: {}, // Lưu reaction của từng user
-            comments: [],
-            timestamp: new Date().toISOString()
-        };
+    // Upload media files trước
+    const mediaPromises = selectedMedia.map(async media => {
+        if (media.file) {
+            const url = await uploadMedia(media.file);
+            return {
+                type: media.type,
+                url: url
+            };
+        }
+        return media;
+    });
 
-        // Add post to DOM
-        addPostToDOM(post);
+    const uploadedMedia = await Promise.all(mediaPromises);
 
-        // Save to localStorage
-        savePost(post);
+    const post = {
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: uploadedMedia,
+        reactions: {
+            likes: 0,
+            hearts: 0,
+            angry: 0
+        },
+        userReactions: {},
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
 
-        // Reset form
-        postInput.value = '';
-        postInput.style.height = 'auto';
-        selectedMedia = [];
-        mediaPreview.style.display = 'none';
-        mediaPreview.innerHTML = '';
-        mediaInput.value = '';
-        updatePostButton();
+    try {
+        await createPost(post);
+        resetPostForm();
+        await loadPosts(); // Tải lại posts sau khi tạo mới
+    } catch (error) {
+        console.error("Error creating post:", error);
+        alert("Không thể tạo bài đăng. Vui lòng thử lại!");
     }
+}
+
+// Thêm hàm reset form
+function resetPostForm() {
+    postInput.value = '';
+    postInput.style.height = 'auto';
+    selectedMedia = [];
+    mediaPreview.style.display = 'none';
+    mediaPreview.innerHTML = '';
+    mediaInput.value = '';
+    updatePostButton();
+}
+
+// THÊM hàm loadPosts mới
+async function loadPosts() {
+    try {
+        const posts = await getPosts();
+        postsContainer.innerHTML = '';
+        posts.forEach(post => {
+            addPostToDOM(post);
+        });
+    } catch (error) {
+        console.error("Error loading posts:", error);
+        alert("Không thể tải bài đăng. Vui lòng thử lại!");
+    }
+}
 
 
     // Initialize Video Players
