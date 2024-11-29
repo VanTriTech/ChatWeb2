@@ -1644,39 +1644,33 @@ body {
 .modal-actions button:hover {
     opacity: 0.8;
 }
+/* Thay thế CSS cũ của data-actions bằng code mới */
 .data-actions {
-    padding: 15px;
+    padding: 8px;
     display: flex;
-    gap: 10px;
+    gap: 8px;
     border-top: 1px solid #2f3336;
     margin-top: auto;
 }
 
-.backup-btn, .update-btn, .restore-btn {
-    padding: 8px 12px;
-    border-radius: 20px;
+.icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
     border: none;
-    color: white;
-    cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 5px;
-    font-size: 14px;
-    transition: opacity 0.2s;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: transparent;
+    color: #1d9bf0;
 }
 
-.backup-btn {
-    background: #1da1f2;
+.icon-btn:hover {
+    background: rgba(29, 155, 240, 0.1);
 }
 
-.update-btn {
-    background: #ff9500;
-}
-
-.restore-btn {
-    background: #17bf63;
-}
-
-.backup-btn:hover, .update-btn:hover, .restore-btn:hover {
-    opacity: 0.9;
+.icon-btn i {
+    font-size: 16px;
 }
