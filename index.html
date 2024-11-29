@@ -188,7 +188,24 @@
             window.location.href = "about:blank";
         }
     </script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script>
+// Cấu hình Firebase của bạn
+const firebaseConfig = {
+  apiKey: "AIzaSyCdvGyyWPgUnIw9OhgGqDbPhjRM5K8jS_4",
+  authDomain: "chatweb2-e7bb7.firebaseapp.com",
+  projectId: "chatweb2-e7bb7",
+  storageBucket: "chatweb2-e7bb7.firebasestorage.app",
+  messagingSenderId: "961903643000",
+  appId: "1:961903643000:web:d7c820340fe94630a9e08d",
+  measurementId: "G-B6T2XZZT0G",
+  databaseURL: "https://chatweb2-e7bb7-default-rtdb.asia-southeast1.firebasedatabase.app" // Thêm dòng này
+};
+    firebase.initializeApp(firebaseConfig);
+</script>
     <script src="script.js"></script>
     <script src="chat.js"></script>
+    
 </body>
 </html>
