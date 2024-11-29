@@ -615,15 +615,54 @@ function formatTime(timestamp) {
     return `${day} tháng ${month} năm ${year} lúc ${hours}:${minutes}`;
 }
 
-function savePost(post) {
-    // Lưu vào localStorage như cũ
-    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    posts.unshift(post);
-    localStorage.setItem('posts', JSON.stringify(posts));
+function loadPosts() {
+    // Hiển thị posts từ localStorage trước
+    const localPosts = JSON.parse(localStorage.getItem('posts') || '[]');
+    postsContainer.innerHTML = '';
+    localPosts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    localPosts.forEach(post => {
+        addPostToDOM(post);
+        setupCommentCollapse(post.id);
+        if (post.comments) {
+            post.comments.forEach(comment => {
+                if (comment.replies && comment.replies.length > 0) {
+                    setupReplyCollapse(comment.id);
+                }
+            });
+        }
+    });
     
-    // Thêm mới: Đồng bộ với Firebase
-    firebase.database().ref('posts/' + post.id).set(post)
-        .catch(error => console.error('Lỗi khi lưu post lên Firebase:', error));
+    // Khôi phục trạng thái
+    restoreCommentStates();
+    restoreReactionStates();
+
+    // Sau đó đồng bộ với Firebase
+    firebase.database().ref('posts').once('value')
+        .then(snapshot => {
+            const firebasePosts = [];
+            snapshot.forEach(childSnapshot => {
+                firebasePosts.push(childSnapshot.val());
+            });
+            
+            // Merge và cập nhật localStorage
+            const allPosts = [...localPosts];
+            let hasNewPosts = false;
+            
+            firebasePosts.forEach(fbPost => {
+                if (!allPosts.find(p => p.id === fbPost.id)) {
+                    allPosts.unshift(fbPost);
+                    hasNewPosts = true;
+                }
+            });
+            
+            if (hasNewPosts) {
+                allPosts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                localStorage.setItem('posts', JSON.stringify(allPosts));
+                // Tải lại trang chỉ khi có bài viết mới
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Lỗi khi load posts từ Firebase:', error));
 }
 
 
