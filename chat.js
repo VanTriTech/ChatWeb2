@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // API Key
     const GEMINI_API_KEY = 'AIzaSyB0QAdCZ93VwEfbPE4FCd_tBDS6PPsl0nw';
-    const GEMINI_API_KEY_2 = 'AIzaSyB0QAdCZ93VwEfbPE4FCd_tBDS6PPsl0nw'; // Thêm dòng này
+    const GEMINI_API_KEY_2 = 'AIzaSyAnLEdH2GyKrp5YXxRfYw1XAgiuBjDhRZo'; // Thêm dòng này
 
     // Backup responses
     const responses = [
