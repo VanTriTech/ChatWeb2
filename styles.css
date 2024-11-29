@@ -1644,3 +1644,7 @@ body {
 .modal-actions button:hover {
     opacity: 0.8;
 }
+/* Container styling */
+.posts-container {
+    min-height: 200px;
+}
