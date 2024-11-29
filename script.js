@@ -240,29 +240,29 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-    async function createPost() {
-        const content = postInput.value.trim();
-        if (!content && selectedMedia.length === 0) return;
+async function createPost() {
+    const content = postInput.value.trim();
+    if (!content && selectedMedia.length === 0) return;
 
-        const postId = Date.now();
-        const post = {
-            id: postId,
-            content: content,
-            author: {
-                name: profileName,
-                username: profileUsername,
-                avatar: document.querySelector('.profile-avatar img').src
-            },
-            media: selectedMedia,
-            reactions: {
-                likes: 0,
-                hearts: 0,
-                angry: 0
-            },
-            userReactions: {}, // Lưu reaction của từng user
-            comments: [],
-            timestamp: new Date().toISOString()
-        };
+    const postId = Date.now();
+    const post = {
+        id: postId,
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: selectedMedia,
+        reactions: {
+            likes: 0,
+            hearts: 0,
+            angry: 0
+        },
+        userReactions: {},
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
 
         // Add post to DOM
         addPostToDOM(post);
@@ -309,20 +309,24 @@ document.addEventListener('DOMContentLoaded', function() {
 window.deletePost = function(postId) {
     if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
         // Xóa từ Firebase
-        firebase.database().ref('posts/' + postId).remove()
-            .then(() => {
-                console.log('Đã xóa bài đăng thành công');
-                // Xóa khỏi DOM
-                const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-                if (postElement) {
-                    postElement.remove();
-                }
-                updateMediaTab();
-            })
-            .catch((error) => {
-                console.error('Lỗi khi xóa bài đăng:', error);
-            });
-    }
+    firebase.database().ref('posts/' + postId).set(post)
+        .then(() => {
+            console.log('Đã đăng bài thành công');
+            
+            // Reset form sau khi đăng thành công
+            postInput.value = '';
+            postInput.style.height = 'auto';
+            selectedMedia = [];
+            mediaPreview.style.display = 'none';
+            mediaPreview.innerHTML = '';
+            mediaInput.value = '';
+            updatePostButton();
+        })
+        .catch((error) => {
+            console.error('Lỗi khi đăng bài:', error);
+            alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại!');
+        });
+}
 };
 
     window.toggleLike = function(postId) {
