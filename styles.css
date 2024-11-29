@@ -1648,30 +1648,35 @@ body {
     padding: 15px;
     display: flex;
     gap: 10px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #2f3336;
+    margin-top: auto;
 }
 
-.backup-btn, .restore-btn {
+.backup-btn, .update-btn, .restore-btn {
     padding: 8px 12px;
     border-radius: 20px;
     border: none;
-    background: #1da1f2;
     color: white;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 5px;
     font-size: 14px;
+    transition: opacity 0.2s;
+}
+
+.backup-btn {
+    background: #1da1f2;
+}
+
+.update-btn {
+    background: #ff9500;
 }
 
 .restore-btn {
     background: #17bf63;
 }
 
-.backup-btn:hover, .restore-btn:hover {
+.backup-btn:hover, .update-btn:hover, .restore-btn:hover {
     opacity: 0.9;
-}
-
-.backup-btn i, .restore-btn i {
-    font-size: 16px;
 }
