@@ -12,154 +12,31 @@ document.addEventListener('DOMContentLoaded', function() {
     // Chat State
     let isExpanded = false;
     let selectedMedia = [];
-    let messageTimeout;
-    let lastMessageTime = Date.now();
-    let autoMessageTimeout;
-    
-    // Mảng chủ đề cho tin nhắn tự động
-    const autoTopics = [
-        "Ê m, dạo này học hành thế nào?",
-        "Hôm nay t mới học được cái hay lắm",
-        "M có xem phim mới k?",
-        "Cuối tuần này đi chơi k?",
-        "T vừa nghĩ ra một ý tưởng hay",
-        "M ăn cơm chưa?",
-        "Dạo này m code project nào k?",
-        "T vừa học xong một bài khó vcl"
+
+    // API Key
+    const GEMINI_API_KEY = 'AIzaSyDC2eRlff09hopH0Wb_j62ECNkwWpwgzVQ';
+
+    // Backup responses
+    const responses = [
+        "Ừ, điều đó thú vị thật! 😊",
+        "Thật hả? Kể thêm đi! 🤗",
+        "Hihi, mình hiểu ý bạn rồi 😄",
+        "Ôi, nghe hay quá! ✨",
+        "Mình cũng nghĩ vậy đó 💕"
     ];
 
-    // Hàm tạo tin nhắn tự động
-    async function generateAutoMessage() {
-        try {
-            const randomTopic = autoTopics[Math.floor(Math.random() * autoTopics.length)];
-            
-            if (Math.random() < 0.5) {
-                let myNgocResponse = await getAIResponse(randomTopic);
-                if (myNgocResponse) {
-                    const myNgocMessage = {
-                        id: Date.now(),
-                        content: myNgocResponse,
-                        sender: 'Mỹ Ngọc',
-                        timestamp: new Date().toISOString(),
-                        media: []
-                    };
-                    addMessageToDOM(myNgocMessage);
-                    saveMessage(myNgocMessage);
-                }
-            } else {
-                let lisaResponse = await getAIResponse2(randomTopic);
-                if (lisaResponse) {
-                    const lisaMessage = {
-                        id: Date.now(),
-                        content: lisaResponse,
-                        sender: 'Lisa',
-                        timestamp: new Date().toISOString(),
-                        media: []
-                    };
-                    addMessageToDOM(lisaMessage);
-                    saveMessage(lisaMessage);
-                }
-            }
-            
-            scrollToBottom();
-            scheduleNextAutoMessage();
-        } catch (error) {
-            console.error('Auto message error:', error);
+    // Event Listeners
+    chatHeader.addEventListener('click', toggleChat);
+    sendBtn.addEventListener('click', handleSendMessage);
+    chatInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage();
         }
-    }
+    });
+    chatMediaInput.addEventListener('change', handleMediaUpload);
 
-    // Hàm lên lịch tin nhắn tự động
-    function scheduleNextAutoMessage() {
-        if (autoMessageTimeout) {
-            clearTimeout(autoMessageTimeout);
-        }
-        
-        // Random 3-10 phút
-        const delay = (3 + Math.random() * 7) * 60 * 1000;
-        
-        autoMessageTimeout = setTimeout(() => {
-            const timeSinceLastMessage = Date.now() - lastMessageTime;
-            // Chỉ gửi nếu im lặng > 3 phút và chat đang mở
-            if (timeSinceLastMessage > 3 * 60 * 1000 && isExpanded) {
-                generateAutoMessage();
-            }
-        }, delay);
-    }
-
-    // Cập nhật hàm handleSendMessage
-    async function handleSendMessage() {
-        const content = chatInput.value.trim();
-        const mediaUrls = selectedMedia.map(media => media.url);
-    
-        if (!content && mediaUrls.length === 0) return;
-
-        lastMessageTime = Date.now();
-        scheduleNextAutoMessage();
-
-        const userMessage = {
-            id: Date.now(),
-            content: content,
-            sender: 'Benton Cato',
-            timestamp: new Date().toISOString(),
-            media: selectedMedia
-        };
-
-        addMessageToDOM(userMessage);
-        saveMessage(userMessage);
-
-        chatInput.value = '';
-        selectedMedia = [];
-        updateMediaPreview();
-        chatInput.focus();
-        scrollToBottom();
-
-        showTypingIndicator();
-
-        try {
-            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
-            
-            let myNgocResponse = await getAIResponse(content, mediaUrls);
-            if (!myNgocResponse) {
-                myNgocResponse = responses[Math.floor(Math.random() * responses.length)];
-            }
-
-            const myNgocMessage = {
-                id: Date.now(),
-                content: myNgocResponse,
-                sender: 'Mỹ Ngọc',
-                timestamp: new Date().toISOString(),
-                media: []
-            };
-
-            addMessageToDOM(myNgocMessage);
-            saveMessage(myNgocMessage);
-            scrollToBottom();
-
-            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
-
-            let lisaResponse = await getAIResponse2(content, mediaUrls);
-            if (!lisaResponse) {
-                lisaResponse = responses_2[Math.floor(Math.random() * responses_2.length)];
-            }
-
-            const lisaMessage = {
-                id: Date.now(),
-                content: lisaResponse,
-                sender: 'Lisa',
-                timestamp: new Date().toISOString(),
-                media: []
-            };
-
-            addMessageToDOM(lisaMessage);
-            saveMessage(lisaMessage);
-            scrollToBottom();
-
-        } catch (error) {
-            console.error('Error:', error);
-        }
-    }
-
-    // Cập nhật hàm toggleChat
+    // Toggle Chat
     function toggleChat() {
         isExpanded = !isExpanded;
         chatContent.style.display = isExpanded ? 'flex' : 'none';
@@ -168,17 +45,166 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isExpanded) {
             loadMessages();
             chatInput.focus();
-            scheduleNextAutoMessage();
-        } else {
-            if (autoMessageTimeout) {
-                clearTimeout(autoMessageTimeout);
-            }
         }
     }
 
-    // Các hàm cần giữ nguyên từ code gốc:
+    // Get AI Response
+async function getAIResponse(message) {
+    try {
+        const prompt = `Bạn là Mỹ Ngọc, một cô gái 20 tuổi. Bạn và người chat là bạn thân từ nhỏ.
 
-    // 1. Hàm xử lý hiển thị typing indicator
+        Ngữ cảnh:
+        - Các bạn là bạn thân thiết từ nhỏ, hiểu rõ về nhau
+        - Bạn rất thông minh, hiểu biết nhiều lĩnh vực
+        - Cách nói chuyện rất tự nhiên, thân thiện như bạn bè
+        
+        Quy tắc trả lời:
+        - Luôn dùng "t" thay cho "tao", "m" thay cho "mày"
+        - Viết tắt các từ phổ biến: không = k, gì = j, được = dc, biết = bít, thế = thế
+        - Thêm emoji phù hợp với cảm xúc
+        - Trả lời ngắn gọn (1-2 câu)
+        - Thỉnh thoảng dùng tiếng lóng: "ô kê", "chill", "ez", "vip", "pro"
+        - Thể hiện sự thân thiết qua cách nói chuyện
+        - Có thể trêu đùa, đá đểu nhẹ nhàng
+        
+        Hãy trả lời tin nhắn sau một cách tự nhiên nhất, nhưng khi hỏi, vui lòng trả lời đúng câu hỏi: "${message}"`;
+
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: prompt
+                        }]
+                    }],
+                    generationConfig: {
+                        temperature: 0.9,
+                        topK: 40,
+                        topP: 0.95,
+                        maxOutputTokens: 100
+                    }
+                })
+            }
+        );
+
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text;
+    } catch (error) {
+        console.error('API Error:', error);
+        return null;
+    }
+}
+
+    // Handle Send Message
+    async function handleSendMessage() {
+        const content = chatInput.value.trim();
+        if (!content && !selectedMedia.length) return;
+
+        // User message
+        const userMessage = {
+            id: Date.now(),
+            content: content,
+            sender: 'Tôi',
+            timestamp: new Date().toISOString(),
+            media: selectedMedia
+        };
+
+        addMessageToDOM(userMessage);
+        saveMessage(userMessage);
+
+        // Reset input
+        chatInput.value = '';
+        selectedMedia = [];
+        updateMediaPreview();
+        chatInput.focus();
+        scrollToBottom();
+
+        // Show typing
+        showTypingIndicator();
+
+        try {
+            // Random delay
+            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+            
+            // Get AI response
+            let aiResponse = await getAIResponse(content);
+            
+            // Use backup if AI fails
+            if (!aiResponse) {
+                aiResponse = responses[Math.floor(Math.random() * responses.length)];
+            }
+
+            removeTypingIndicator();
+
+            // Bot message
+            const botMessage = {
+                id: Date.now(),
+                content: aiResponse,
+                sender: 'Mỹ Ngọc',
+                timestamp: new Date().toISOString(),
+                media: []
+            };
+
+            addMessageToDOM(botMessage);
+            saveMessage(botMessage);
+            scrollToBottom();
+        } catch (error) {
+            console.error('Error:', error);
+            removeTypingIndicator();
+            
+            // Fallback message
+            const fallbackMessage = {
+                id: Date.now(),
+                content: responses[Math.floor(Math.random() * responses.length)],
+                sender: 'Mỹ Ngọc',
+                timestamp: new Date().toISOString(),
+                media: []
+            };
+
+            addMessageToDOM(fallbackMessage);
+            saveMessage(fallbackMessage);
+            scrollToBottom();
+        }
+    }
+
+    // Add Message to DOM
+function addMessageToDOM(message) {
+    const messageElement = document.createElement('div');
+    messageElement.className = `message ${message.sender === 'Tôi' ? 'sent' : 'received'}`;
+    messageElement.setAttribute('data-message-id', message.id);
+    
+    const mediaHTML = message.media ? message.media.map(media => `
+        <div class="message-media">
+            ${media.type === 'image' 
+                ? `<img src="${media.url}" alt="Media">`
+                : `<video src="${media.url}" controls></video>`
+            }
+        </div>
+    `).join('') : '';
+
+    messageElement.innerHTML = `
+        <div class="message-content">
+            <div class="message-header">
+                <span class="message-sender">${message.sender}</span>
+                <span class="message-time">${formatTime(message.timestamp)}</span>
+                <button class="delete-btn" onclick="deleteMessage(${message.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+            <div class="message-text">${message.content}</div>
+            ${mediaHTML}
+        </div>
+    `;
+
+    chatMessages.appendChild(messageElement);
+}
+
+    // Show/Remove Typing Indicator
     function showTypingIndicator() {
         const typingElement = document.createElement('div');
         typingElement.className = 'message received typing-indicator';
@@ -202,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 2. Hàm xử lý media
+    // Handle Media Upload
     function handleMediaUpload(e) {
         const files = Array.from(e.target.files);
         files.forEach(file => {
@@ -224,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 3. Hàm cập nhật preview media
+    // Update Media Preview
     function updateMediaPreview() {
         const previewContainer = document.createElement('div');
         previewContainer.className = 'media-preview';
@@ -250,39 +276,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // 4. Các hàm xử lý tin nhắn
-    function addMessageToDOM(message) {
-        const messageElement = document.createElement('div');
-        messageElement.className = `message ${message.sender === 'Tôi' ? 'sent' : 'received'}`;
-        messageElement.setAttribute('data-message-id', message.id);
-        
-        const mediaHTML = message.media ? message.media.map(media => `
-            <div class="message-media">
-                ${media.type === 'image' 
-                    ? `<img src="${media.url}" alt="Media">`
-                    : `<video src="${media.url}" controls></video>`
-                }
-            </div>
-        `).join('') : '';
-
-        messageElement.innerHTML = `
-            <div class="message-content">
-                <div class="message-header">
-                    <span class="message-sender">${message.sender}</span>
-                    <span class="message-time">${formatTime(message.timestamp)}</span>
-                    <button class="delete-btn" onclick="deleteMessage(${message.id})">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-                <div class="message-text">${message.content}</div>
-                ${mediaHTML}
-            </div>
-        `;
-
-        chatMessages.appendChild(messageElement);
-    }
-
-    // 5. Hàm load tin nhắn
+    // Load Messages
     function loadMessages() {
         const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
         chatMessages.innerHTML = '';
@@ -290,14 +284,14 @@ document.addEventListener('DOMContentLoaded', function() {
         scrollToBottom();
     }
 
-    // 6. Hàm lưu tin nhắn
+    // Save Message
     function saveMessage(message) {
         const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
         messages.push(message);
         localStorage.setItem('chat_messages', JSON.stringify(messages));
     }
 
-    // 7. Các hàm tiện ích
+    // Utility Functions
     function scrollToBottom() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -309,28 +303,27 @@ document.addEventListener('DOMContentLoaded', function() {
         return `${hours}:${minutes}`;
     }
 
-    // 8. Hàm xóa media preview
+    // Remove Media Preview
     window.removeMediaPreview = function(index) {
         selectedMedia.splice(index, 1);
         updateMediaPreview();
     }
 
-    // 9. Hàm xóa tin nhắn
-    window.deleteMessage = function(messageId) {
-        if (confirm('Bạn có chắc muốn xóa tin nhắn này?')) {
-            const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
-            const updatedMessages = messages.filter(m => m.id !== messageId);
-            localStorage.setItem('chat_messages', JSON.stringify(updatedMessages));
-            
-            const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
-            if (messageElement) {
-                messageElement.remove();
-            }
-        }
-    }
-
-    // Khởi tạo
-    if (isExpanded) {
-        scheduleNextAutoMessage();
+    // Initialize
+    if (!isExpanded) {
+        chatContent.style.display = 'none';
     }
 });
+// Delete Message
+window.deleteMessage = function(messageId) {
+    if (confirm('Bạn có chắc muốn xóa tin nhắn này?')) {
+        const messages = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+        const updatedMessages = messages.filter(m => m.id !== messageId);
+        localStorage.setItem('chat_messages', JSON.stringify(updatedMessages));
+        
+        const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+        if (messageElement) {
+            messageElement.remove();
+        }
+    }
+}
