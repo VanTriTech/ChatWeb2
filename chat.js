@@ -8,60 +8,32 @@ document.addEventListener('DOMContentLoaded', function() {
     const expandBtn = chatWidget.querySelector('.expand-btn');
 
     // API key của Gemini
-    const API_KEY = 'AIzaSyDC2eRlff09hopH0Wb_j62ECNkwWpwgzVQ';
+    const API_KEY = 'AIzaSyB0QAdCZ93VwEfbPE4FCd_tBDS6PPsl0nw';
+    const API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
 
-    // Xử lý đóng/mở chat widget
-    expandBtn.addEventListener('click', () => {
-        chatContent.classList.toggle('expanded');
-        const icon = expandBtn.querySelector('i');
-        icon.classList.toggle('fa-chevron-up');
-        icon.classList.toggle('fa-chevron-down');
-    });
-
-    // Xử lý gửi tin nhắn với retry và timeout
+    // Xử lý gửi tin nhắn
     async function sendMessage(message) {
         appendMessage('user', message);
         
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
-
-            const response = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent', {
+            showTypingIndicator();
+            
+            const response = await fetch(`${API_URL}?key=${API_KEY}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${API_KEY}`
                 },
                 body: JSON.stringify({
                     contents: [{
                         parts: [{
                             text: message
                         }]
-                    }],
-                    generationConfig: {
-                        temperature: 0.7,
-                        topK: 40,
-                        topP: 0.95,
-                        maxOutputTokens: 1024,
-                    },
-                    safetySettings: [
-                        {
-                            category: "HARM_CATEGORY_HARASSMENT",
-                            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                        },
-                        {
-                            category: "HARM_CATEGORY_HATE_SPEECH",
-                            threshold: "BLOCK_MEDIUM_AND_ABOVE"
-                        }
-                    ]
-                }),
-                signal: controller.signal
+                    }]
+                })
             });
 
-            clearTimeout(timeoutId);
-
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error('Network response was not ok');
             }
 
             const data = await response.json();
@@ -75,11 +47,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
         } catch (error) {
             console.error('Error:', error);
-            if (error.name === 'AbortError') {
-                appendMessage('ai', 'Xin lỗi, yêu cầu đã hết thời gian chờ. Vui lòng thử lại.');
-            } else {
-                appendMessage('ai', 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.');
-            }
+            appendMessage('ai', 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại sau.');
+        } finally {
+            removeTypingIndicator();
+        }
+    }
+
+    // Hiển thị typing indicator
+    function showTypingIndicator() {
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'typing-indicator';
+        typingDiv.innerHTML = '<span></span><span></span><span></span>';
+        chatMessages.appendChild(typingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Xóa typing indicator
+    function removeTypingIndicator() {
+        const typingIndicator = chatMessages.querySelector('.typing-indicator');
+        if (typingIndicator) {
+            typingIndicator.remove();
         }
     }
 
@@ -103,28 +90,6 @@ document.addEventListener('DOMContentLoaded', function() {
         chatMessages.appendChild(messageDiv);
 
         chatMessages.scrollTop = chatMessages.scrollHeight;
-        
-        // Lưu tin nhắn vào localStorage
-        saveMessage({
-            sender,
-            message,
-            timestamp: new Date().toISOString()
-        });
-    }
-
-    // Lưu tin nhắn vào localStorage
-    function saveMessage(messageObj) {
-        const messages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
-        messages.push(messageObj);
-        localStorage.setItem('chatMessages', JSON.stringify(messages));
-    }
-
-    // Load tin nhắn từ localStorage
-    function loadMessages() {
-        const messages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
-        messages.forEach(msg => {
-            appendMessage(msg.sender, msg.message);
-        });
     }
 
     // Xử lý sự kiện gửi tin nhắn
@@ -143,6 +108,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Load tin nhắn khi khởi động
-    loadMessages();
+    // Xử lý đóng/mở chat widget
+    expandBtn.addEventListener('click', () => {
+        chatContent.classList.toggle('expanded');
+        const icon = expandBtn.querySelector('i');
+        icon.classList.toggle('fa-chevron-up');
+        icon.classList.toggle('fa-chevron-down');
+    });
 });
