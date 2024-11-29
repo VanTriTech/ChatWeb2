@@ -1644,3 +1644,34 @@ body {
 .modal-actions button:hover {
     opacity: 0.8;
 }
+.data-actions {
+    padding: 15px;
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid #eee;
+}
+
+.backup-btn, .restore-btn {
+    padding: 8px 12px;
+    border-radius: 20px;
+    border: none;
+    background: #1da1f2;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 14px;
+}
+
+.restore-btn {
+    background: #17bf63;
+}
+
+.backup-btn:hover, .restore-btn:hover {
+    opacity: 0.9;
+}
+
+.backup-btn i, .restore-btn i {
+    font-size: 16px;
+}
