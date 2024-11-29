@@ -1629,3 +1629,61 @@ window.savePostReactions = function(postId) {
     // Hiển thị thông báo thành công
     alert('Đã cập nhật reactions thành công!');
 };
+// Thêm nút Export/Import vào menu với icon nhỏ gọn
+const backupHTML = `
+<div class="backup-actions">
+    <button onclick="backupData()" class="icon-btn" title="Sao lưu">
+        <i class="fas fa-download"></i>
+    </button>
+    <input type="file" id="restoreInput" accept=".json" onchange="restoreData(event)" style="display: none">
+    <label for="restoreInput" class="icon-btn" title="Khôi phục">
+        <i class="fas fa-upload"></i>
+    </label>
+</div>
+`;
+
+// Chèn vào profile mini
+document.querySelector('.user-profile-mini').insertAdjacentHTML('beforebegin', backupHTML);
+
+// Hàm sao lưu dữ liệu
+function backupData() {
+    try {
+        const data = {
+            posts: JSON.parse(localStorage.getItem('posts') || '[]'),
+            timestamp: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `webchat_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        alert('Đã sao lưu thành công!');
+    } catch (error) {
+        alert('Lỗi khi sao lưu: ' + error.message);
+    }
+}
+
+// Hàm khôi phục dữ liệu
+function restoreData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data.posts) throw new Error('File không hợp lệ');
+            
+            localStorage.setItem('posts', JSON.stringify(data.posts));
+            location.reload();
+            alert('Đã khôi phục thành công!');
+        } catch (error) {
+            alert('Lỗi khi khôi phục: ' + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
