@@ -188,31 +188,7 @@
             window.location.href = "about:blank";
         }
     </script>
-    <!-- Thêm vào phần head, trước script.js -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-storage.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyCdvGyyWPgUnIw9OhgGqDbPhjRM5K8jS_4",
-    authDomain: "chatweb2-e7bb7.firebaseapp.com", 
-    projectId: "chatweb2-e7bb7",
-    storageBucket: "chatweb2-e7bb7.firebasestorage.app",
-    messagingSenderId: "961903643000",
-    appId: "1:961903643000:web:d7c820340fe94630a9e08d",
-    measurementId: "G-B6T2XZZT0G"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const storage = getStorage(app);
-
-  // Expose Firebase instances globally
-  window.db = db;
-  window.storage = storage;
-</script>
-<script type="module" src="script.js"></script>
+    <script src="script.js"></script>
     <script src="chat.js"></script>
 </body>
 </html>
