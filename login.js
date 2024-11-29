@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('isLoggedIn', 'true');
                 localStorage.setItem('currentUser', username);
                 // Chuyển hướng về URL gốc của Shop
-                window.location.replace('https://vantritech.github.io/Shop/');
+                window.location.replace('https://vantritech.github.io/ChatWeb2/');
             }, 3000);
         }
     });
@@ -241,6 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // Thêm event listener để xử lý trường hợp trang không tự chuyển hướng
 window.addEventListener('storage', (e) => {
     if (e.key === 'isLoggedIn' && e.newValue === 'true') {
-        window.location.replace('https://vantritech.github.io/Shop/');
+        window.location.replace('https://vantritech.github.io/ChatWeb2/');
     }
 });
