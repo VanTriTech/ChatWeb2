@@ -146,13 +146,6 @@
 })();
 document.addEventListener('DOMContentLoaded', function() {
     // DOM Elements
-    const postInput = document.getElementById('post-input');
-    const postButton = document.getElementById('post-button');
-    const mediaInput = document.getElementById('media-input');
-    const postsContainer = document.getElementById('posts-container');
-    const mediaPreview = document.querySelector('.media-preview');
-    const profileName = document.querySelector('.profile-name').textContent;
-    const profileUsername = document.querySelector('.profile-username').textContent;
     const navItems = document.querySelectorAll('.nav-item');
     const contentSections = document.querySelectorAll('.content-section');
     
@@ -163,22 +156,36 @@ document.addEventListener('DOMContentLoaded', function() {
     navItems.forEach(item => {
         item.addEventListener('click', function(e) {
             e.preventDefault();
-            const targetTab = this.dataset.tab;
             
-            // Update active states
+            // Remove active class from all tabs and sections
             navItems.forEach(nav => nav.classList.remove('active'));
+            contentSections.forEach(section => section.classList.remove('active'));
+            
+            // Add active class to clicked tab
             this.classList.add('active');
             
             // Show corresponding section
-            contentSections.forEach(section => {
-                section.classList.remove('active');
-                if (section.id === `${targetTab}-section`) {
-                    section.classList.add('active');
-                }
-            });
+            const targetId = `${this.dataset.tab}-section`;
+            document.getElementById(targetId).classList.add('active');
+            
+            // Load content based on tab
+            if (this.dataset.tab === 'for-you') {
+                loadForYouContent();
+            } else if (this.dataset.tab === 'following') {
+                loadFollowingContent();
+            }
         });
     });
-    
+});
+function loadForYouContent() {
+    const forYouContainer = document.querySelector('#for-you-section .posts-container');
+    // Thêm logic load nội dung "Dành cho bạn" ở đây
+}
+
+function loadFollowingContent() {
+    const followingContainer = document.querySelector('#following-section .posts-container');
+    // Thêm logic load nội dung "Đang theo dõi" ở đây
+}
 
     // Auto resize textarea
     postInput.addEventListener('input', function() {
