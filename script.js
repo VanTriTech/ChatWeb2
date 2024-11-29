@@ -953,7 +953,7 @@ window.editComment = function(postId, commentId) {
 document.addEventListener('DOMContentLoaded', () => {
     if (localStorage.getItem('isLoggedIn') !== 'true') {
         // Chưa đăng nhập, chuyển về trang login
-        window.location.replace('https://vantritech.github.io/Shop/login.html');
+        window.location.replace('https://vantritech.github.io/ChatWeb2/login.html');
         return;
     }
     
@@ -966,7 +966,7 @@ function handleLogout() {
     if (confirm("Bạn có chắc chắn muốn đăng xuất?")) {
         localStorage.removeItem('isLoggedIn');
         localStorage.removeItem('currentUser');
-        window.location.replace('https://vantritech.github.io/Shop/login.html');
+        window.location.replace('https://vantritech.github.io/ChatWeb2/login.html');
     }
 }
 // Thêm hàm xử lý reaction
