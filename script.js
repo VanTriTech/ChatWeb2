@@ -1629,34 +1629,42 @@ window.savePostReactions = function(postId) {
     // Hiển thị thông báo thành công
     alert('Đã cập nhật reactions thành công!');
 };
+// ... existing code ...
 
+// Thêm nút Export/Import vào menu với chỉ icon
+const menuHTML = `
+<div class="data-actions">
+    <button onclick="exportData()" class="backup-btn" title="Sao lưu dữ liệu">
+        <i class="fas fa-download"></i>
+    </button>
+    <input type="file" id="restoreInput" 
+           accept=".json" 
+           onchange="importData(event)" 
+           style="display: none">
+    <label for="restoreInput" class="restore-btn" title="Khôi phục dữ liệu">
+        <i class="fas fa-upload"></i>
+    </label>
+</div>
+`;
 
+// Thêm vào sidebar hoặc menu profile
+document.querySelector('.user-profile-mini').insertAdjacentHTML('beforebegin', menuHTML);
 
-// Hàm export data
+// Hàm export/import data đã được thu gọn
 function exportData() {
     try {
-        // Lấy tất cả dữ liệu từ localStorage
         const data = {
             posts: JSON.parse(localStorage.getItem('posts') || '[]'),
             timestamp: new Date().toISOString(),
             version: '1.0'
         };
-        
-        // Tạo file để download
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `webchat_backup_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-        
+        downloadJSON(data, `webchat_backup_${new Date().toISOString().slice(0,10)}.json`);
         alert('Đã sao lưu dữ liệu thành công!');
     } catch (error) {
         alert('Lỗi khi sao lưu: ' + error.message);
     }
 }
 
-// Hàm import data
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -1665,18 +1673,9 @@ function importData(event) {
     reader.onload = function(e) {
         try {
             const data = JSON.parse(e.target.result);
-            
-            // Kiểm tra version và cấu trúc dữ liệu
-            if (!data.version || !data.posts) {
-                throw new Error('File không đúng định dạng');
-            }
-            
-            // Lưu vào localStorage
+            if (!data.posts) throw new Error('File không đúng định dạng');
             localStorage.setItem('posts', JSON.stringify(data.posts));
-            
-            // Reload trang để cập nhật UI
             location.reload();
-            
             alert('Đã khôi phục dữ liệu thành công!');
         } catch (error) {
             alert('Lỗi khi khôi phục: ' + error.message);
@@ -1684,3 +1683,17 @@ function importData(event) {
     };
     reader.readAsText(file);
 }
+
+function downloadJSON(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// ... rest of the code ...
