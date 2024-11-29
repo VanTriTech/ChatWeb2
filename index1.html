@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Chat</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="chat.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Left Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fab fa-weixin"></i>
+            </div>
+            <nav class="nav-menu">
+                <a href="#" class="nav-link active">
+                    <i class="fas fa-home"></i>
+                    <span>Trang chủ</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-search"></i>
+                    <span>Khám phá</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-bell"></i>
+                    <span>Thông báo</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-envelope"></i>
+                    <span>Tin nhắn</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-bookmark"></i>
+                    <span>Grok</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-users"></i>
+                    <span>Cộng đồng</span>
+                </a>
+                <a href="#" class="nav-link">
+                    <i class="fas fa-user"></i>
+                    <span>Hồ sơ</span>
+                </a>
+                <button class="tweet-btn">Đăng</button>
+            </nav>
+            <!-- User Profile Mini -->
+            <div class="user-profile-mini">
+                <img src="https://scontent.fsgn5-3.fna.fbcdn.net/v/t39.30808-6/370359771_314608017596982_7845257365469445897_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=443oe_Nuqn4Q7kNvgHqCzvm&_nc_zt=23&_nc_ht=scontent.fsgn5-3.fna&_nc_gid=AdNB7lsC6IcVxOYuqbcuT0F&oh=00_AYAs2Hn6MLg4NIWmiy1EXdNl6iYyxIrtULrBnsKe8Yw40w&oe=674CA725" alt="Avatar">
+                <div class="user-info">
+                    <span class="user-name">兰幼金</span>
+                    <span class="user-handle">@LanYouJin</span>
+                </div>
+                <i class="fas fa-ellipsis" onclick="handleLogout()"></i>
+            </div>
+        </aside>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="banner-image">
+                    <img src="https://scontent.fsgn5-14.fna.fbcdn.net/v/t39.30808-6/229994946_111261701254823_5479659463233253001_n.jpg?_nc_cat=106&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=5jHDuMUqw3oQ7kNvgHcoil7&_nc_zt=23&_nc_ht=scontent.fsgn5-14.fna&_nc_gid=AJu6uLFhf0SoRIVG2jQIAoJ&oh=00_AYDeCmw4J1WtJQWAVTiMHzu0JBVG0ncHk-E-dbFjusuN7A&oe=674CAA39" alt="Banner">
+                </div>
+                <div class="profile-info">
+                    <div class="profile-avatar">
+                        <img src="https://scontent.fsgn5-3.fna.fbcdn.net/v/t39.30808-6/370359771_314608017596982_7845257365469445897_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=443oe_Nuqn4Q7kNvgHqCzvm&_nc_zt=23&_nc_ht=scontent.fsgn5-3.fna&_nc_gid=AdNB7lsC6IcVxOYuqbcuT0F&oh=00_AYAs2Hn6MLg4NIWmiy1EXdNl6iYyxIrtULrBnsKe8Yw40w&oe=674CA725" alt="Avatar">
+                    </div>
+                    <div class="profile-details">
+                        <h1 class="profile-name">兰幼金</h1>
+                        <p class="profile-username">@LanYouJin</p>
+                        <div class="bio">
+                            <p>⚖️🎓 我是兰幼金，一名既是律师👩‍⚖️又曾学医💊🩺的女生，热爱知识与探索✨</p>
+                            <p>🎥🏫 毕业于北京电影学院🎬🌟，这里是中国影视界的摇篮，孕育了无数璀璨明星✨💫</p>
+                            <p>💖🌈 目前单身💕，喜欢享受生活🌸🍃，每天都活得充满热情🔥和希望🌞！</p>
+                        </div>
+                        <div class="join-date">
+                            <i class="far fa-calendar"></i>
+                            Đã tham gia tháng 11 năm 2024
+                        </div>
+                        <div class="follow-stats">
+                            <span><b>13</b> Đang theo dõi</span>
+                            <span><b>150,9N</b> Người theo dõi</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Navigation -->
+<nav class="profile-nav">
+    <div class="nav-items">
+        <a href="#" class="nav-item active" data-tab="posts">Bài Đăng</a>
+        <a href="#" class="nav-item" data-tab="replies">Phản Hồi</a>
+        <a href="#" class="nav-item" data-tab="highlights">Nổi Bật</a>
+        <a href="#" class="nav-item" data-tab="media">Media</a>
+    </div>
+</nav>
+
+            <!-- Content Sections -->
+<div class="content-sections">
+    <div id="posts-section" class="content-section active">
+        <div class="post-form">
+            <img src="https://scontent.fsgn5-3.fna.fbcdn.net/v/t39.30808-6/370359771_314608017596982_7845257365469445897_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=443oe_Nuqn4Q7kNvgHqCzvm&_nc_zt=23&_nc_ht=scontent.fsgn5-3.fna&_nc_gid=AdNB7lsC6IcVxOYuqbcuT0F&oh=00_AYAs2Hn6MLg4NIWmiy1EXdNl6iYyxIrtULrBnsKe8Yw40w&oe=674CA725" alt="Avatar" class="post-avatar">
+            <div class="post-input-wrapper">
+                <textarea id="post-input" placeholder="兰幼金, bạn đang nghĩ gì?"></textarea>
+                <div class="post-actions">
+                    <div class="media-upload">
+                        <label for="media-input">
+                            <i class="far fa-image"></i>
+                        </label>
+                        <input type="file" id="media-input" accept="image/*,video/*" multiple hidden>
+                    </div>
+                    <button id="post-button" disabled>Đăng</button>
+                </div>
+            </div>
+        </div>
+        <div id="posts-container" class="posts-container"></div>
+    </div>
+
+    <div id="replies-section" class="content-section">
+        <div class="empty-state">
+            <p>Chưa có phản hồi!</p>
+        </div>
+    </div>
+
+    <div id="highlights-section" class="content-section">
+        <div class="empty-state">
+            <p>Chưa có bài đăng nổi bật!</p>
+        </div>
+    </div>
+
+    <div id="media-section" class="content-section">
+        <div class="empty-state">
+            <p>Chưa có Media!</p>
+        </div>
+    </div>
+</div>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="right-sidebar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Tìm kiếm">
+            </div>
+
+            <!-- Chat Widget -->
+            <div class="chat-widget">
+                <div class="chat-header">
+                    <span>Tin nhắn</span>
+                    <button class="expand-btn">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </div>
+                <div class="chat-content">
+                    <div class="chat-list">
+                        <div class="chat-item active">
+                            <img src="https://scontent.fsgn5-3.fna.fbcdn.net/v/t39.30808-6/370359771_314608017596982_7845257365469445897_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=-Kau_hq2KjQQ7kNvgFAf4tI&_nc_zt=23&_nc_ht=scontent.fsgn5-3.fna&_nc_gid=AVEUskbvpQrs895OEV9Aq-F&oh=00_AYDOfH4SGUYKZup97nKnyOKIvB9UpQof7qKP18Sz8-SgyQ&oe=674809E5" alt="Avatar" class="chat-avatar">
+                            <div class="chat-info">
+                                <span class="chat-name">Những người bạn</span>
+                                <span class="chat-preview">@Nhomxamlo01</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-messages"></div>
+                    <div class="chat-input-container">
+                        <input type="text" class="chat-input" placeholder="Nhập tin nhắn...">
+                        <div class="chat-actions">
+                            <label for="chat-media">
+                                <i class="far fa-image"></i>
+                            </label>
+                            <input type="file" id="chat-media" accept="image/*,video/*" hidden>
+                            <button class="send-btn">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+    <!-- Thêm vào phần head hiện có -->
+    <script>
+        // Kiểm tra ngay khi tải trang
+        if (window.outerWidth - window.innerWidth > 160 || window.outerHeight - window.innerHeight > 160) {
+            window.location.href = "about:blank";
+        }
+    </script>
+    <script src="script.js"></script>
+    <script src="chat.js"></script>
+</body>
+</html>
