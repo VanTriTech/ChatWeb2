@@ -144,7 +144,9 @@
         }
     }, 100);
 })();
-document.addEventListener('DOMContentLoaded', function() {
+import { uploadMedia, createPost, getPosts, updatePost, deletePost } from './firebase.js';
+
+document.addEventListener('DOMContentLoaded', async function() {
     // DOM Elements
     const postInput = document.getElementById('post-input');
     const postButton = document.getElementById('post-button');
@@ -156,7 +158,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const navItems = document.querySelectorAll('.nav-item');
     const contentSections = document.querySelectorAll('.content-section');
     
-
     let selectedMedia = [];
 
     // Navigation Tabs
@@ -236,51 +237,48 @@ document.addEventListener('DOMContentLoaded', function() {
     function updatePostButton() {
         postButton.disabled = !postInput.value.trim() && selectedMedia.length === 0;
     }
-
-    // Create New Post
-    postButton.addEventListener('click', createPost);
-
-// THÊM đoạn code này
-async function createPost() {
+// Thay đổi event listener cho nút post
+postButton.addEventListener('click', handleCreatePost);
+// Thay thế hàm createPost cũ
+async function handleCreatePost() {
     const content = postInput.value.trim();
     if (!content && selectedMedia.length === 0) return;
 
-    // Upload media files trước
-    const mediaPromises = selectedMedia.map(async media => {
-        if (media.file) {
-            const url = await uploadMedia(media.file);
-            return {
-                type: media.type,
-                url: url
-            };
-        }
-        return media;
-    });
-
-    const uploadedMedia = await Promise.all(mediaPromises);
-
-    const post = {
-        content: content,
-        author: {
-            name: profileName,
-            username: profileUsername,
-            avatar: document.querySelector('.profile-avatar img').src
-        },
-        media: uploadedMedia,
-        reactions: {
-            likes: 0,
-            hearts: 0,
-            angry: 0
-        },
-        userReactions: {},
-        comments: [],
-        timestamp: new Date().toISOString()
-    };
-
     try {
-        await createPost(post);
+        // Upload media files trước
+        const mediaPromises = selectedMedia.map(async media => {
+            if (media.file) {
+                const url = await uploadMedia(media.file);
+                return {
+                    type: media.type,
+                    url: url
+                };
+            }
+            return media;
+        });
+
+        const uploadedMedia = await Promise.all(mediaPromises);
+
+        const postData = {
+            content: content,
+            author: {
+                name: profileName,
+                username: profileUsername,
+                avatar: document.querySelector('.profile-avatar img').src
+            },
+            media: uploadedMedia,
+            reactions: {
+                likes: 0,
+                hearts: 0,
+                angry: 0
+            },
+            userReactions: {},
+            comments: []
+        };
+
+        await createPost(postData);
         resetPostForm();
-        await loadPosts(); // Tải lại posts sau khi tạo mới
+        await loadPosts();
     } catch (error) {
         console.error("Error creating post:", error);
         alert("Không thể tạo bài đăng. Vui lòng thử lại!");
@@ -338,31 +336,23 @@ async function loadPosts() {
         menu.classList.toggle('active');
     }
 
-window.deletePost = function(postId) {
+async function handleDeletePost(postId) {
     if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
-        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        const postIndex = posts.findIndex(p => p.id === postId);
-        
-        if (postIndex !== -1) {
-            // Xóa post khỏi mảng
-            posts.splice(postIndex, 1);
-            
-            // Cập nhật localStorage
-            localStorage.setItem('posts', JSON.stringify(posts));
-            
-            // Xóa post khỏi DOM
+        try {
+            await deletePost(postId);
             const postElement = document.querySelector(`[data-post-id="${postId}"]`);
             if (postElement) {
                 postElement.remove();
             }
-          // Cập nhật lại tab Media
             updateMediaTab();
-            
-            // Thông báo xóa thành công (tùy chọn)
-            console.log('Đã xóa bài viết thành công');
+        } catch (error) {
+            console.error("Error deleting post:", error);
+            alert("Không thể xóa bài đăng. Vui lòng thử lại!");
         }
     }
-};
+}
+// Gán function mới cho window.deletePost
+window.deletePost = handleDeletePost;
 
     window.toggleLike = function(postId) {
         const posts = JSON.parse(localStorage.getItem('posts') || '[]');
