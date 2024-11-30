@@ -319,7 +319,6 @@ window.deletePost = function(postId) {
             if (postElement) {
                 postElement.remove();
             }
-            updateMediaTab();
         }
     }
 };
@@ -385,30 +384,14 @@ function restoreCommentStates() {
 // Sửa lại hàm loadPosts
 // Sửa lại hàm loadPosts
 function loadPosts() {
-    // Lấy posts từ key mới 'posts1'
     const posts = JSON.parse(localStorage.getItem('posts1') || '[]');
-    
-    // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Sắp xếp posts theo thời gian mới nhất
-    posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
     posts.forEach(post => {
         addPostToDOM(post);
-        setupCommentCollapse(post.id);
-        if (post.comments) {
-            post.comments.forEach(comment => {
-                if (comment.replies && comment.replies.length > 0) {
-                    setupReplyCollapse(comment.id);
-                }
-            });
-        }
     });
-    
-    // Khôi phục trạng thái
-    restoreCommentStates();
-    restoreReactionStates();
 }
 
 
@@ -594,13 +577,8 @@ function formatTime(timestamp) {
 
 // Sửa lại hàm savePost
 function savePost(post) {
-    // Lấy danh sách posts hiện tại từ localStorage
     let posts = JSON.parse(localStorage.getItem('posts1') || '[]');
-    
-    // Thêm post mới vào đầu mảng
     posts.unshift(post);
-    
-    // Lưu lại vào localStorage với key mới 'posts1'
     localStorage.setItem('posts1', JSON.stringify(posts));
 }
 
@@ -1657,19 +1635,30 @@ function backupData() {
             posts: JSON.parse(localStorage.getItem('posts1') || '[]'),
             timestamp: new Date().toISOString()
         };
-        
-        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `webchat_backup_${new Date().toISOString().slice(0,10)}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-        
-        alert('Đã sao lưu thành công!');
+        // ... rest of backup code ...
     } catch (error) {
         alert('Lỗi khi sao lưu: ' + error.message);
     }
+}
+
+function restoreData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (!data.posts) throw new Error('File không hợp lệ');
+            
+            localStorage.setItem('posts1', JSON.stringify(data.posts));
+            location.reload();
+            alert('Đã khôi phục thành công!');
+        } catch (error) {
+            alert('Lỗi khi khôi phục: ' + error.message);
+        }
+    };
+    reader.readAsText(file);
 }
 
 // Hàm khôi phục dữ liệu
