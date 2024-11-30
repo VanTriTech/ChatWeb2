@@ -378,8 +378,8 @@ function loadPosts() {
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Sắp xếp ngẫu nhiên
-    posts.sort(() => Math.random() - 0.5);
+    // Sắp xếp theo thời gian mới nhất (thay vì ngẫu nhiên)
+    posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
     posts.forEach(post => {
         // Tạo element cho post
@@ -387,44 +387,30 @@ function loadPosts() {
         postElement.className = 'post';
         postElement.setAttribute('data-post-id', post.id);
         
-        // Kiểm tra các từ khóa cần ẩn chỉ trong nội dung chính của post
+        // Kiểm tra các từ khóa cần ẩn
         const containsBlockedContent = (
-            // Kiểm tra trong nội dung post
             (post.content && (
                 post.content.toLowerCase().includes('@lanyoujin') ||
                 post.content.toLowerCase().includes('@18+')
             )) ||
-            // Kiểm tra trong username của author
-            (post.author && post.author.username && (
-                post.author.username.toLowerCase().includes('@lanyoujin')
-            )) ||
-            // Kiểm tra trong tên của author
+            (post.author && post.author.username && 
+                post.author.username.toLowerCase().includes('@lanyoujin')) ||
             (post.author && post.author.name && 
-                post.author.name === '兰幼金'
-            )
+                post.author.name === '兰幼金')
         );
 
         if (containsBlockedContent) {
-            // Nếu chứa nội dung cần ẩn, thêm class ẩn và style display none
             postElement.classList.add('hidden-post');
             postElement.style.display = 'none';
-            return; // Bỏ qua không thêm vào DOM
-        }
-        
-        // Nếu không chứa nội dung cần ẩn, thêm post vào DOM như bình thường
-        addPostToDOM(post);
-        setupCommentCollapse(post.id);
-        if (post.comments) {
-            post.comments.forEach(comment => {
-                if (comment.replies && comment.replies.length > 0) {
-                    setupReplyCollapse(comment.id);
-                }
-            });
+        } else {
+            // Nếu không chứa nội dung cần ẩn, thêm post vào DOM
+            addPostToDOM(post);
         }
     });
     
     restoreCommentStates();
     restoreReactionStates();
+    updateMediaTab();
 }
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
@@ -1707,7 +1693,6 @@ function restoreData(event) {
 // Gộp tất cả CSS vào một style element
 const style = document.createElement('style');
 style.textContent = `
-    // CSS cho việc ẩn post
     .hidden-post {
         display: none !important;
         visibility: hidden !important;
@@ -1718,7 +1703,6 @@ style.textContent = `
         padding: 0 !important;
     }
 
-    // CSS cho định dạng văn bản
     .post-text {
         white-space: pre-line;
         word-wrap: break-word;
