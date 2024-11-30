@@ -135,19 +135,16 @@ body {
     min-height: 100vh;
 }
 
-/* Profile Header */
 .profile-header {
-    border-bottom: 1px solid #2f3336;
+    /* Xóa border-bottom nếu không cần */
+    /* border-bottom: 1px solid #2f3336; */
     position: relative;
     margin-bottom: 20px;
 }
-
 .banner-image {
-    width: 100%;
-    height: 200px;
-    position: relative;
-    overflow: hidden;
-    background-color: #000;
+    /* Xóa chiều cao và ảnh nền */
+    /* height: 200px; */
+    /* background-color: #000; */
 }
 
 
@@ -166,18 +163,18 @@ body {
 
 
 .profile-avatar {
-    position: absolute;
-    left: 16px;
-    bottom: -140px; /* Điều chỉnh vị trí avatar xuống dưới banner */
-    border: 4px solid #000;
-    border-radius: 50%;
+    /* Xóa vị trí và border */
+    /* position: absolute; */
+    /* border: 4px solid #000; */
+    /* border-radius: 50%; */
     z-index: 2;
 }
 .profile-avatar img {
-    width: 133px;
-    height: 133px;
-    border-radius: 50%;
-    background-color: #000;
+    /* Xóa kích thước ảnh */
+    /* width: 133px; */
+    /* height: 133px; */
+    /* border-radius: 50%; */
+    /* background-color: #000; */
 }
 .profile-name {
     font-size: 20px;
@@ -1647,6 +1644,15 @@ body {
     opacity: 0.8;
 }
 .profile-details {
-    padding-top: 70px; /* Tạo khoảng trống cho avatar */
+    /* Xóa padding-top nếu không cần */
+    /* padding-top: 70px; */
     padding-left: 16px;
+}
+.profile-name,
+.profile-username,
+.bio,
+.join-date,
+.follow-stats {
+    /* Ẩn các phần tử này */
+    display: none;
 }
