@@ -147,7 +147,6 @@ if (!isMobile) {
     })();
 }
 
-// Xử lý đăng nhập
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
 
@@ -176,6 +175,64 @@ document.addEventListener('DOMContentLoaded', () => {
             redirectTo: '/'
         }
     ];
+
+    // Cảnh báo Caps Lock
+    const capsLockWarning = document.createElement('p');
+    capsLockWarning.style.color = 'red';
+    capsLockWarning.style.textAlign = 'center';
+    capsLockWarning.textContent = 'Vui lòng tắt caps lock';
+    capsLockWarning.style.display = 'none';
+    loginForm.insertBefore(capsLockWarning, loginForm.firstChild);
+
+    document.getElementById('password').addEventListener('keyup', (event) => {
+        capsLockWarning.style.display = event.getModifierState('CapsLock') ? 'block' : 'none';
+    });
+
+    loginForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const button = event.target.querySelector('button');
+
+        // Kiểm tra Admin trước
+        if (username === 'Admin' && password === 'Admin') {
+            localStorage.setItem('isLoggedIn', 'true');
+            localStorage.setItem('currentUser', username);
+            window.location.replace('https://vantritech.github.io/ChatWeb2/');
+            return;
+        }
+
+        // Xử lý các tài khoản khác
+        try {
+            const hashedUsername = await sha256(username);
+            const hashedPassword = await sha256(password);
+            
+            const user = mockUsers.find(u => 
+                u.username === hashedUsername && 
+                u.password === hashedPassword
+            );
+
+            if (user) {
+                button.textContent = 'Đang tải...';
+                button.disabled = true;
+
+                setTimeout(() => {
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('currentUser', username);
+                    window.location.replace('https://vantritech.github.io/ChatWeb2/');
+                }, 3000);
+            } else {
+                alert('Tài khoản hoặc mật khẩu không đúng!');
+                button.disabled = false;
+            }
+        } catch (error) {
+            console.error('Lỗi đăng nhập:', error);
+            alert('Có lỗi xảy ra khi đăng nhập. Vui lòng thử lại!');
+            button.disabled = false;
+        }
+    });
+});
 
     // Cảnh báo Caps Lock
     const capsLockWarning = document.createElement('p');
