@@ -405,24 +405,31 @@ function loadPosts() {
         postElement.className = 'post';
         postElement.setAttribute('data-post-id', post.id);
         
-        // Kiểm tra kỹ hơn về sự xuất hiện của @LanYouJin
-        const containsLanYouJin = (
+        // Kiểm tra các từ khóa cần ẩn chỉ trong nội dung chính của post
+        const containsBlockedContent = (
             // Kiểm tra trong nội dung post
-            (post.content && post.content.toLowerCase().includes('@lanyoujin')) ||
+            (post.content && (
+                post.content.toLowerCase().includes('@lanyoujin') ||
+                post.content.toLowerCase().includes('@18+')
+            )) ||
             // Kiểm tra trong username của author
-            (post.author && post.author.username && post.author.username.toLowerCase().includes('@lanyoujin')) ||
+            (post.author && post.author.username && (
+                post.author.username.toLowerCase().includes('@lanyoujin')
+            )) ||
             // Kiểm tra trong tên của author
-            (post.author && post.author.name && post.author.name.toLowerCase() === '兰幼金')
+            (post.author && post.author.name && 
+                post.author.name === '兰幼金'
+            )
         );
 
-        if (containsLanYouJin) {
-            // Nếu chứa @LanYouJin, thêm class ẩn và style display none
+        if (containsBlockedContent) {
+            // Nếu chứa nội dung cần ẩn, thêm class ẩn và style display none
             postElement.classList.add('hidden-post');
             postElement.style.display = 'none';
             return; // Bỏ qua không thêm vào DOM
         }
         
-        // Nếu không chứa @LanYouJin, thêm post vào DOM như bình thường
+        // Nếu không chứa nội dung cần ẩn, thêm post vào DOM như bình thường
         addPostToDOM(post);
         setupCommentCollapse(post.id);
         if (post.comments) {
@@ -437,7 +444,6 @@ function loadPosts() {
     restoreCommentStates();
     restoreReactionStates();
 }
-
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
     const input = event.target;
