@@ -44,24 +44,6 @@
             </div>
         `;
 
-        // Thêm style cho animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes glitch {
-                0% { transform: translate(0) skew(0deg) }
-                20% { transform: translate(-2px, 2px) skew(2deg) }
-                40% { transform: translate(-2px, -2px) skew(-2deg) }
-                60% { transform: translate(2px, 2px) skew(-2deg) }
-                80% { transform: translate(2px, -2px) skew(2deg) }
-                100% { transform: translate(0) skew(0deg) }
-            }
-            @keyframes blink {
-                0% { opacity: 1 }
-                50% { opacity: 0 }
-                100% { opacity: 1 }
-            }
-        `;
-        document.head.appendChild(style);
 
         // Log IP
         fetch('https://api.ipify.org?format=json')
