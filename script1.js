@@ -1722,8 +1722,10 @@ function restoreData(event) {
 
 // Thêm CSS để xử lý ẩn post
 // Thêm CSS với !important để đảm bảo luôn ẩn
+// Gộp tất cả CSS vào một style element
 const style = document.createElement('style');
 style.textContent = `
+    // CSS cho việc ẩn post
     .hidden-post {
         display: none !important;
         visibility: hidden !important;
@@ -1733,17 +1735,12 @@ style.textContent = `
         margin: 0 !important;
         padding: 0 !important;
     }
-`;
-document.head.appendChild(style);
-// Thêm CSS để giữ định dạng
-const style = document.createElement('style');
-style.textContent = `
+
+    // CSS cho định dạng văn bản
     .post-text {
         white-space: pre-line;
         word-wrap: break-word;
         margin: 10px 0;
     }
-    
-    // ... existing CSS for hidden-post ...
 `;
 document.head.appendChild(style);
