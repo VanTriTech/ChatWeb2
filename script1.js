@@ -308,26 +308,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.deletePost = function(postId) {
     if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
-        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+        const posts = JSON.parse(localStorage.getItem('posts1') || '[]');
         const postIndex = posts.findIndex(p => p.id === postId);
         
         if (postIndex !== -1) {
-            // Xóa post khỏi mảng
             posts.splice(postIndex, 1);
+            localStorage.setItem('posts1', JSON.stringify(posts));
             
-            // Cập nhật localStorage
-            localStorage.setItem('posts', JSON.stringify(posts));
-            
-            // Xóa post khỏi DOM
             const postElement = document.querySelector(`[data-post-id="${postId}"]`);
             if (postElement) {
                 postElement.remove();
             }
-          // Cập nhật lại tab Media
             updateMediaTab();
-            
-            // Thông báo xóa thành công (tùy chọn)
-            console.log('Đã xóa bài viết thành công');
         }
     }
 };
@@ -391,8 +383,10 @@ function restoreCommentStates() {
 }
 
 // Sửa lại hàm loadPosts
+// Sửa lại hàm loadPosts
 function loadPosts() {
-    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    // Lấy posts từ key mới 'posts1'
+    const posts = JSON.parse(localStorage.getItem('posts1') || '[]');
     
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
@@ -403,15 +397,20 @@ function loadPosts() {
     posts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
-        post.comments.forEach(comment => {
-            if (comment.replies && comment.replies.length > 0) {
-                setupReplyCollapse(comment.id);
-            }
-        });
+        if (post.comments) {
+            post.comments.forEach(comment => {
+                if (comment.replies && comment.replies.length > 0) {
+                    setupReplyCollapse(comment.id);
+                }
+            });
+        }
     });
+    
+    // Khôi phục trạng thái
     restoreCommentStates();
     restoreReactionStates();
 }
+
 
 
 // Thay đổi phần xử lý comment input
@@ -593,12 +592,17 @@ function formatTime(timestamp) {
     return `${day} tháng ${month} năm ${year} lúc ${hours}:${minutes}`;
 }
 
+// Sửa lại hàm savePost
 function savePost(post) {
-    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    posts.unshift(post); // Thêm post mới vào đầu mảng
-    localStorage.setItem('posts', JSON.stringify(posts));
+    // Lấy danh sách posts hiện tại từ localStorage
+    let posts = JSON.parse(localStorage.getItem('posts1') || '[]');
+    
+    // Thêm post mới vào đầu mảng
+    posts.unshift(post);
+    
+    // Lưu lại vào localStorage với key mới 'posts1'
+    localStorage.setItem('posts1', JSON.stringify(posts));
 }
-
 
 // Khai báo biến global cho image modal
 let currentImageIndex = 0;
@@ -1391,7 +1395,7 @@ function setupReplyCollapse(commentId) {
 
 // Thêm hàm editPost
 window.editPost = function(postId) {
-    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    const posts = JSON.parse(localStorage.getItem('posts1') || '[]');
     const post = posts.find(p => p.id === postId);
     
     if (post) {
@@ -1497,7 +1501,7 @@ function addLike2Animation(button) {
 // Thêm hàm để cập nhật tab Media
 function updateMediaTab() {
     const mediaSection = document.getElementById('media-section');
-    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    const posts = JSON.parse(localStorage.getItem('posts1') || '[]');
     
     // Lọc các bài đăng có chứa "@LanYouJin" trong nội dung chính của post (không tính comments)
     const allMedia = posts.reduce((acc, post) => {
@@ -1650,7 +1654,7 @@ document.querySelector('.user-profile-mini').insertAdjacentHTML('beforebegin', b
 function backupData() {
     try {
         const data = {
-            posts: JSON.parse(localStorage.getItem('posts') || '[]'),
+            posts: JSON.parse(localStorage.getItem('posts1') || '[]'),
             timestamp: new Date().toISOString()
         };
         
@@ -1679,7 +1683,7 @@ function restoreData(event) {
             const data = JSON.parse(e.target.result);
             if (!data.posts) throw new Error('File không hợp lệ');
             
-            localStorage.setItem('posts', JSON.stringify(data.posts));
+            localStorage.setItem('posts1', JSON.stringify(data.posts));
             location.reload();
             alert('Đã khôi phục thành công!');
         } catch (error) {
