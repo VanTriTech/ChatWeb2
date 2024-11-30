@@ -770,7 +770,7 @@ body {
 
 /* Content Sections */
 .content-section {
-    min-height: 200px;
+    display: none;
 }
 
 .content-section.active {
@@ -779,21 +779,9 @@ body {
 
 /* Empty State */
 .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-    color: #71767b;
     text-align: center;
-}
-.empty-state i {
-    font-size: 40px;
-    margin-bottom: 16px;
-}
-.empty-state p {
-    font-size: 15px;
-    margin: 0;
+    padding: 40px;
+    color: #71767b;
 }
 /* Điều chỉnh phần actions của comment */
 .comment-actions {
@@ -1655,8 +1643,4 @@ body {
 
 .modal-actions button:hover {
     opacity: 0.8;
-}
-/* Container styling */
-.posts-container {
-    min-height: 200px;
 }
