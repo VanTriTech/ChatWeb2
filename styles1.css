@@ -1575,3 +1575,30 @@ body {
 .modal-actions button:hover {
     opacity: 0.8;
 }
+/* Giữ lại các style cần thiết cho việc đăng bài */
+.profile-info {
+    display: none; /* Ẩn toàn bộ profile info */
+}
+
+.profile-avatar img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+.profile-name, .profile-username {
+    display: none; /* Ẩn tên và username nhưng vẫn giữ để JavaScript có thể truy cập */
+}
+
+/* Style cho navigation */
+.profile-nav {
+    position: sticky;
+    top: 0;
+    background-color: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+    border-bottom: 1px solid #2f3336;
+    margin-top: 0;
+}
+
+/* Giữ nguyên các style khác của navigation */
