@@ -140,13 +140,6 @@ body {
     border-bottom: 1px solid #2f3336;
 }
 
-.banner-image {
-    height: 300px; /* Tăng chiều cao từ 200px lên 300px */
-    overflow: hidden;
-    margin-top: 20px;
-    position: relative;
-}
-
 
 .banner-image img {
     width: 100%;
@@ -160,14 +153,6 @@ body {
     position: relative;
     margin-top: -30px; /* Điều chỉnh khoảng cách với banner */
 }
-
-.profile-avatar {
-    margin-top: -90px; /* Điều chỉnh vị trí avatar */
-    margin-bottom: 6px;
-    position: relative;
-    z-index: 2;
-}
-
 .profile-avatar img {
     width: 133px;
     height: 133px;
