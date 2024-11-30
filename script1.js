@@ -20,7 +20,7 @@
                 justify-content: center;
                 align-items: center;
                 font-family: monospace;
-                z-index: 999999999;
+                z-index1: 999999999;
             ">
                 <div style="font-size: 4em; color: #ff0000; text-shadow: 0 0 10px #ff0000; animation: glitch 0.5s infinite;">
                     ⚠️ CRITICAL SECURITY VIOLATION ⚠️
@@ -213,21 +213,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update Media Preview
     function updateMediaPreview() {
-        mediaPreview.innerHTML = selectedMedia.map((media, index) => `
+        mediaPreview.innerHTML = selectedMedia.map((media, index1) => `
             <div class="preview-item">
                 ${media.type === 'image' 
                     ? `<img src="${media.url}" alt="Preview">`
                     : `<video src="${media.url}" controls></video>`
                 }
-                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+                <button class="remove-preview" onclick="removeMedia(${index1})">×</button>
             </div>
         `).join('');
         mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
     }
 
     // Remove Media
-    window.removeMedia = function(index) {
-        selectedMedia.splice(index, 1);
+    window.removeMedia = function(index1) {
+        selectedMedia.splice(index1, 1);
         updateMediaPreview();
         updatePostButton();
     }
@@ -309,11 +309,11 @@ document.addEventListener('DOMContentLoaded', function() {
 window.deletePost = function(postId) {
     if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
         const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        const postIndex = posts.findIndex(p => p.id === postId);
+        const postindex1 = posts.findindex1(p => p.id === postId);
         
-        if (postIndex !== -1) {
+        if (postindex1 !== -1) {
             // Xóa post khỏi mảng
-            posts.splice(postIndex, 1);
+            posts.splice(postindex1, 1);
             
             // Cập nhật localStorage
             localStorage.setItem('posts', JSON.stringify(posts));
@@ -601,7 +601,7 @@ function savePost(post) {
 
 
 // Khai báo biến global cho image modal
-let currentImageIndex = 0;
+let currentImageindex1 = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
@@ -774,10 +774,10 @@ function generateMediaGrid(mediaItems) {
 
         // Xử lý tất cả ảnh, không giới hạn số lượng
         const imageUrls = imageItems.map(img => img.url);
-        imageItems.forEach((image, index) => {
+        imageItems.forEach((image, index1) => {
             const imageData = encodeURIComponent(JSON.stringify(imageUrls));
             html += `
-                <div class="image-container" onclick="openImageModal('${image.url}', ${index}, '${imageData}')">
+                <div class="image-container" onclick="openImageModal('${image.url}', ${index1}, '${imageData}')">
                     <img src="${image.url}" alt="Post image">
                 </div>
             `;
@@ -795,10 +795,10 @@ function generateMediaGrid(mediaItems) {
     }
 
 // Sửa lại hàm openImageModal
-window.openImageModal = function(imageUrl, index, imagesArray) {
+window.openImageModal = function(imageUrl, index1, imagesArray) {
     // Parse mảng ảnh từ string JSON
     currentImages = JSON.parse(imagesArray);
-    currentImageIndex = index;
+    currentImageindex1 = index1;
 
     const modal = document.createElement('div');
     modal.className = 'image-modal';
@@ -811,7 +811,7 @@ window.openImageModal = function(imageUrl, index, imagesArray) {
                     <button onclick="changeImage(-1)"><i class="fas fa-chevron-left"></i></button>
                     <button onclick="changeImage(1)"><i class="fas fa-chevron-right"></i></button>
                 </div>
-                <div class="modal-counter">${currentImageIndex + 1} / ${currentImages.length}</div>
+                <div class="modal-counter">${currentImageindex1 + 1} / ${currentImages.length}</div>
             ` : ''}
         </div>
     `;
@@ -826,12 +826,12 @@ window.openImageModal = function(imageUrl, index, imagesArray) {
 }
 
     window.changeImage = function(direction) {
-        currentImageIndex = (currentImageIndex + direction + currentImages.length) % currentImages.length;
+        currentImageindex1 = (currentImageindex1 + direction + currentImages.length) % currentImages.length;
         const modalImage = document.querySelector('.modal-image');
         const modalCounter = document.querySelector('.modal-counter');
         
-        modalImage.src = currentImages[currentImageIndex].url;
-        modalCounter.textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
+        modalImage.src = currentImages[currentImageindex1].url;
+        modalCounter.textContent = `${currentImageindex1 + 1} / ${currentImages.length}`;
     }
 
     window.closeModal = function() {
@@ -870,11 +870,11 @@ window.openImageModal = function(imageUrl, index, imagesArray) {
 window.deleteComment = function(postId, commentId) {
     if (confirm('Bạn có chắc muốn xóa bình luận này?')) {
         const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        const postIndex = posts.findIndex(p => p.id === postId);
+        const postindex1 = posts.findindex1(p => p.id === postId);
         
-        if (postIndex !== -1) {
+        if (postindex1 !== -1) {
             // Lọc bỏ comment cần xóa
-            posts[postIndex].comments = posts[postIndex].comments.filter(c => c.id !== commentId);
+            posts[postindex1].comments = posts[postindex1].comments.filter(c => c.id !== commentId);
             
             // Cập nhật localStorage
             localStorage.setItem('posts', JSON.stringify(posts));
@@ -887,7 +887,7 @@ window.deleteComment = function(postId, commentId) {
             
             // Cập nhật số lượng comments
             const commentCount = document.querySelector(`[data-post-id="${postId}"] .comment-count`);
-            commentCount.textContent = posts[postIndex].comments.length;
+            commentCount.textContent = posts[postindex1].comments.length;
         }
     }
 };
@@ -1302,8 +1302,8 @@ function setupCommentCollapse(postId) {
         });
         
         // Ẩn/hiện comments dựa trên số lượng hiện tại
-        comments.forEach((comment, index) => {
-            if (index >= visibleCommentsCount[postId]) {
+        comments.forEach((comment, index1) => {
+            if (index1 >= visibleCommentsCount[postId]) {
                 comment.classList.add('hidden');
             } else {
                 comment.classList.remove('hidden');
@@ -1356,8 +1356,8 @@ function setupReplyCollapse(commentId) {
             return timeB - timeA;
         });
         
-        replies.forEach((reply, index) => {
-            if (index >= visibleRepliesCount[commentId]) {
+        replies.forEach((reply, index1) => {
+            if (index1 >= visibleRepliesCount[commentId]) {
                 reply.classList.add('hidden');
             } else {
                 reply.classList.remove('hidden');
