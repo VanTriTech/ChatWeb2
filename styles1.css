@@ -184,7 +184,6 @@ body {
     font-weight: bold;
     margin-bottom: 4px;
 }
-
 .profile-username {
     color: #71767b;
     margin-bottom: 12px;
@@ -1646,4 +1645,8 @@ body {
 
 .modal-actions button:hover {
     opacity: 0.8;
+}
+.profile-details {
+    padding-top: 70px; /* Tạo khoảng trống cho avatar */
+    padding-left: 16px;
 }
