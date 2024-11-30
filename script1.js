@@ -400,19 +400,32 @@ function loadPosts() {
     posts.sort(() => Math.random() - 0.5);
     
     posts.forEach(post => {
-        // Kiểm tra nếu post hoặc comments chứa @LanYouJin
-        const containsLanYouJin = (post.content && post.content.includes('@LanYouJin')) || 
-            (post.comments && post.comments.some(comment => 
-                comment.content.includes('@LanYouJin') || 
-                (comment.replies && comment.replies.some(reply => 
-                    reply.content.includes('@LanYouJin')
-                ))
-            ));
+        // Tạo element cho post
+        const postElement = document.createElement('div');
+        postElement.className = 'post';
+        postElement.setAttribute('data-post-id', post.id);
         
-        if (!containsLanYouJin) {
-            // Chỉ hiển thị post không chứa @LanYouJin
-            addPostToDOM(post);
-            setupCommentCollapse(post.id);
+        // Kiểm tra kỹ hơn về sự xuất hiện của @LanYouJin
+        const containsLanYouJin = (
+            // Kiểm tra trong nội dung post
+            (post.content && post.content.toLowerCase().includes('@lanyoujin')) ||
+            // Kiểm tra trong username của author
+            (post.author && post.author.username && post.author.username.toLowerCase().includes('@lanyoujin')) ||
+            // Kiểm tra trong tên của author
+            (post.author && post.author.name && post.author.name.toLowerCase() === '兰幼金')
+        );
+
+        if (containsLanYouJin) {
+            // Nếu chứa @LanYouJin, thêm class ẩn và style display none
+            postElement.classList.add('hidden-post');
+            postElement.style.display = 'none';
+            return; // Bỏ qua không thêm vào DOM
+        }
+        
+        // Nếu không chứa @LanYouJin, thêm post vào DOM như bình thường
+        addPostToDOM(post);
+        setupCommentCollapse(post.id);
+        if (post.comments) {
             post.comments.forEach(comment => {
                 if (comment.replies && comment.replies.length > 0) {
                     setupReplyCollapse(comment.id);
@@ -1701,10 +1714,17 @@ function restoreData(event) {
 // ... existing code ...
 
 // Thêm CSS để xử lý ẩn post
+// Thêm CSS với !important để đảm bảo luôn ẩn
 const style = document.createElement('style');
 style.textContent = `
     .hidden-post {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 `;
 document.head.appendChild(style);
