@@ -135,16 +135,16 @@ body {
     min-height: 100vh;
 }
 
+/* Profile Header */
 .profile-header {
-    /* Xóa border-bottom nếu không cần */
-    /* border-bottom: 1px solid #2f3336; */
-    position: relative;
-    margin-bottom: 20px;
+    border-bottom: 1px solid #2f3336;
 }
+
 .banner-image {
-    /* Xóa chiều cao và ảnh nền */
-    /* height: 200px; */
-    /* background-color: #000; */
+    height: 300px; /* Tăng chiều cao từ 200px lên 300px */
+    overflow: hidden;
+    margin-top: 20px;
+    position: relative;
 }
 
 
@@ -152,35 +152,36 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center 40%; /* Điều chỉnh vị trí ảnh */
 }
-
 
 .profile-info {
+    padding: 16px;
     position: relative;
-    padding: 0 16px;
-    margin-top: 60px; /* Tạo khoảng cách cho avatar */
+    margin-top: -30px; /* Điều chỉnh khoảng cách với banner */
 }
-
 
 .profile-avatar {
-    /* Xóa vị trí và border */
-    /* position: absolute; */
-    /* border: 4px solid #000; */
-    /* border-radius: 50%; */
+    margin-top: -90px; /* Điều chỉnh vị trí avatar */
+    margin-bottom: 6px;
+    position: relative;
     z-index: 2;
 }
+
 .profile-avatar img {
-    /* Xóa kích thước ảnh */
-    /* width: 133px; */
-    /* height: 133px; */
-    /* border-radius: 50%; */
-    /* background-color: #000; */
+    width: 133px;
+    height: 133px;
+    border-radius: 50%;
+    border: 4px solid #000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1); /* Thêm bóng đổ nhẹ */
 }
+
 .profile-name {
     font-size: 20px;
     font-weight: bold;
     margin-bottom: 4px;
 }
+
 .profile-username {
     color: #71767b;
     margin-bottom: 12px;
@@ -1642,17 +1643,4 @@ body {
 
 .modal-actions button:hover {
     opacity: 0.8;
-}
-.profile-details {
-    /* Xóa padding-top nếu không cần */
-    /* padding-top: 70px; */
-    padding-left: 16px;
-}
-.profile-name,
-.profile-username,
-.bio,
-.join-date,
-.follow-stats {
-    /* Ẩn các phần tử này */
-    display: none;
 }
