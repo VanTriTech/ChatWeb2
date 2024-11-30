@@ -196,8 +196,6 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('password').addEventListener('keyup', checkCapsLock);
 
     // Xử lý submit form
-// Trong phần xử lý submit form
-// Trong phần xử lý submit form
 loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
 
@@ -209,30 +207,48 @@ loginForm.addEventListener('submit', async (event) => {
         return;
     }
 
+    // Kiểm tra Admin
+    if (username === 'Admin' && password === 'Admin') {
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('currentUser', username);
+        window.location.replace('https://vantritech.github.io/ChatWeb2/');
+        return;
+    }
+
+    // Xử lý các tài khoản khác
     const hashedUsername = await sha256(username);
     const hashedPassword = await sha256(password);
 
-    const user = mockUsers.find((u) => u.username === hashedUsername);
+    const mockUsers = [
+        { 
+            username: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // Admin
+            password: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // Admin
+            redirectTo: '/'
+        },
+        { 
+            username: 'e5d6dc87d0a3d4c0c374ec7f5c8b16d3e850e24dd1fbf0e5b81c3783a4bc7f7a', // Admin1
+            password: 'e5d6dc87d0a3d4c0c374ec7f5c8b16d3e850e24dd1fbf0e5b81c3783a4bc7f7a', // Admin1
+            redirectTo: '/'
+        },
+        { 
+            username: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08', // LanAuKimLou123
+            password: '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08', // LanAuKimLou123
+            redirectTo: '/'
+        }
+    ];
+
+    const user = mockUsers.find((u) => u.username === hashedUsername && u.password === hashedPassword);
     
-    if (user && user.password === hashedPassword) {
+    if (user) {
         const button = event.target.querySelector('button');
+        button.textContent = 'Đang tải...';
         button.disabled = true;
-        
-        // Kiểm tra nếu là tài khoản Admin
-        if (username === 'Admin' && password === 'Admin') {
-            // Login ngay lập tức
+
+        setTimeout(() => {
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('currentUser', username);
             window.location.replace('https://vantritech.github.io/ChatWeb2/');
-        } else {
-            // Các tài khoản khác đợi 3 giây
-            button.textContent = 'Đang tải...';
-            setTimeout(() => {
-                localStorage.setItem('isLoggedIn', 'true');
-                localStorage.setItem('currentUser', username);
-                window.location.replace('https://vantritech.github.io/ChatWeb2/');
-            }, 3000);
-        }
+        }, 3000);
     } else {
         alert('Tài khoản hoặc mật khẩu không đúng!');
     }
