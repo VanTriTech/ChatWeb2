@@ -378,7 +378,7 @@ function loadPosts() {
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Sắp xếp theo thời gian mới nhất (thay vì ngẫu nhiên)
+    // Sắp xếp bài đăng theo thời gian mới nhất
     posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
     posts.forEach(post => {
@@ -387,30 +387,34 @@ function loadPosts() {
         postElement.className = 'post';
         postElement.setAttribute('data-post-id', post.id);
         
-        // Kiểm tra các từ khóa cần ẩn
+        // Kiểm tra các từ khóa cần ẩn chỉ trong nội dung chính của post
         const containsBlockedContent = (
             (post.content && (
                 post.content.toLowerCase().includes('@lanyoujin') ||
                 post.content.toLowerCase().includes('@18+')
-            )) ||
-            (post.author && post.author.username && 
-                post.author.username.toLowerCase().includes('@lanyoujin')) ||
-            (post.author && post.author.name && 
-                post.author.name === '兰幼金')
+            ))
         );
 
         if (containsBlockedContent) {
+            // Nếu chứa nội dung cần ẩn, thêm class ẩn và style display none
             postElement.classList.add('hidden-post');
             postElement.style.display = 'none';
         } else {
-            // Nếu không chứa nội dung cần ẩn, thêm post vào DOM
+            // Nếu không chứa nội dung cần ẩn, thêm post vào DOM như bình thường
             addPostToDOM(post);
+            setupCommentCollapse(post.id);
+            if (post.comments) {
+                post.comments.forEach(comment => {
+                    if (comment.replies && comment.replies.length > 0) {
+                        setupReplyCollapse(comment.id);
+                    }
+                });
+            }
         }
     });
     
     restoreCommentStates();
     restoreReactionStates();
-    updateMediaTab();
 }
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
@@ -1688,9 +1692,6 @@ function restoreData(event) {
 }
 // ... existing code ...
 
-// Thêm CSS để xử lý ẩn post
-// Thêm CSS với !important để đảm bảo luôn ẩn
-// Gộp tất cả CSS vào một style element
 const style = document.createElement('style');
 style.textContent = `
     .hidden-post {
@@ -1702,11 +1703,23 @@ style.textContent = `
         margin: 0 !important;
         padding: 0 !important;
     }
-
     .post-text {
         white-space: pre-line;
         word-wrap: break-word;
         margin: 10px 0;
+    }
+    @keyframes glitch {
+        0% { transform: translate(0) skew(0deg) }
+        20% { transform: translate(-2px, 2px) skew(2deg) }
+        40% { transform: translate(-2px, -2px) skew(-2deg) }
+        60% { transform: translate(2px, 2px) skew(-2deg) }
+        80% { transform: translate(2px, -2px) skew(2deg) }
+        100% { transform: translate(0) skew(0deg) }
+    }
+    @keyframes blink {
+        0% { opacity: 1 }
+        50% { opacity: 0 }
+        100% { opacity: 1 }
     }
 `;
 document.head.appendChild(style);
