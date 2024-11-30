@@ -420,11 +420,6 @@ function loadPosts() {
     restoreCommentStates();
     restoreReactionStates();
 }
-    // Thêm hàm để refresh posts khi cần
-function refreshPosts() {
-    loadPosts();
-}
-
 
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
