@@ -1701,3 +1701,13 @@ function restoreData(event) {
     };
     reader.readAsText(file);
 }
+// ... existing code ...
+
+// Thêm CSS để xử lý ẩn post
+const style = document.createElement('style');
+style.textContent = `
+    .hidden-post {
+        display: none !important;
+    }
+`;
+document.head.appendChild(style);
