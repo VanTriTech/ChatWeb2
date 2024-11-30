@@ -1602,3 +1602,21 @@ body {
 }
 
 /* Giữ nguyên các style khác của navigation */
+/* Style cho nút refresh */
+.refresh-btn {
+    background: none;
+    border: none;
+    color: #1d9bf0;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+    background-color: rgba(29, 155, 240, 0.1);
+}
+
+.refresh-btn i {
+    font-size: 16px;
+}
