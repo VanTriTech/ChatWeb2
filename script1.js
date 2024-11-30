@@ -393,8 +393,15 @@ function restoreCommentStates() {
 // Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    
+    // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
-    posts.forEach(post => addPostToDOM(post));
+    
+    // Sắp xếp posts theo thời gian mới nhất
+    posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    posts.forEach(post => {
+        addPostToDOM(post);
         setupCommentCollapse(post.id);
         post.comments.forEach(comment => {
             if (comment.replies && comment.replies.length > 0) {
@@ -587,8 +594,8 @@ function formatTime(timestamp) {
 }
 
 function savePost(post) {
-    let posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    posts.unshift(post);
+    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    posts.unshift(post); // Thêm post mới vào đầu mảng
     localStorage.setItem('posts', JSON.stringify(posts));
 }
 
