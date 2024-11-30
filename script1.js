@@ -390,7 +390,7 @@ function restoreCommentStates() {
     });
 }
 
-// Tìm hàm loadPosts và thay thế bằng phiên bản mới
+// Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     
@@ -399,14 +399,13 @@ function loadPosts() {
     
     // Lọc bỏ các bài đăng có chứa @LanYouJin
     const filteredPosts = posts.filter(post => {
-        return !post.content.includes('@LanYouJin') && 
-               !post.author.username.includes('@LanYouJin');
+        const content = (post.content || '').toLowerCase();
+        return !content.includes('@lanyoujin');
     });
     
-    // Xáo trộn mảng posts để hiển thị ngẫu nhiên
+    // Sắp xếp ngẫu nhiên các bài đăng
     const shuffledPosts = filteredPosts.sort(() => Math.random() - 0.5);
     
-    // Hiển thị các bài đăng
     shuffledPosts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
