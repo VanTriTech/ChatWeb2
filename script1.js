@@ -640,10 +640,85 @@ function addPostToDOM(post) {
     postElement.setAttribute('data-post-id', post.id);
 
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
-    
-    // Thay đổi cách hiển thị nội dung post
-    const postContent = post.content ? `<p class="post-text">${post.content.replace(/\n/g, '<br>')}</p>` : '';
-    
+    const commentsHTML = post.comments ? post.comments.map(comment => `
+        <div class="comment" data-comment-id="${comment.id}">
+            <img src="${comment.author.avatar}" alt="Avatar" class="comment-avatar">
+            <div class="comment-content">
+                <div class="comment-text-container">
+                    <span class="comment-name">${comment.author.name}</span>
+                    <p class="comment-text">${comment.content}</p>
+                </div>
+                <div class="comment-actions">
+                    <button class="like-btn" onclick="handleReaction(${post.id}, ${comment.id}, 'likes')">
+                        <i class="far fa-thumbs-up"></i>
+                        <span class="reaction-count">${comment.reactions?.likes || 0}</span>
+                    </button>
+                    <button class="heart-btn" onclick="handleReaction(${post.id}, ${comment.id}, 'hearts')">
+                        <i class="far fa-heart"></i>
+                        <span class="reaction-count">${comment.reactions?.hearts || 0}</span>
+                    </button>
+                    <button class="angry-btn" onclick="handleReaction(${post.id}, ${comment.id}, 'angry')">
+                        <i class="far fa-angry"></i>
+                        <span class="reaction-count">${comment.reactions?.angry || 0}</span>
+                    </button>
+                    <button class="reply-button" onclick="toggleReplyForm(${post.id}, ${comment.id})">
+                        Phản hồi
+                    </button>
+                    <span class="comment-time">${formatTime(comment.timestamp)}</span>
+                </div>
+                <div class="comment-menu">
+                    <button class="comment-menu-button" onclick="toggleCommentMenu(${post.id}, ${comment.id})">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </button>
+                    <div class="comment-menu-dropdown" id="comment-menu-${comment.id}">
+                        <div class="menu-item edit" onclick="editComment(${post.id}, ${comment.id})">
+                            <i class="fas fa-edit"></i>
+                            Chỉnh sửa
+                        </div>
+                        <div class="menu-item delete" onclick="deleteComment(${post.id}, ${comment.id})">
+                            <i class="fas fa-trash"></i>
+                            Xóa
+                        </div>
+                    </div>
+                </div>
+                <div class="reply-form" id="reply-form-${comment.id}">
+                    <input type="text" class="reply-input" 
+                           placeholder="Viết phản hồi..." 
+                           onkeypress="handleReply(event, ${post.id}, ${comment.id})">
+                </div>
+                <div class="replies" id="replies-${comment.id}">
+                    ${comment.replies ? comment.replies.map(reply => `
+                        <div class="reply-comment" data-reply-id="${reply.id}">
+                            <img src="${reply.author.avatar}" alt="Avatar" class="reply-avatar">
+                            <div class="reply-content">
+                                <div class="reply-text-container">
+                                    <span class="comment-name">${reply.author.name}</span>
+                                    <span class="reply-target">@${comment.author.name}</span>
+                                    <p class="reply-text">${reply.content}</p>
+                                </div>
+                                <div class="comment-actions">
+                                    <button class="like-btn" onclick="handleReaction(${post.id}, ${reply.id}, 'likes')">
+                                        <i class="far fa-thumbs-up"></i>
+                                        <span class="reaction-count">${reply.reactions?.likes || 0}</span>
+                                    </button>
+                                    <button class="heart-btn" onclick="handleReaction(${post.id}, ${reply.id}, 'hearts')">
+                                        <i class="far fa-heart"></i>
+                                        <span class="reaction-count">${reply.reactions?.hearts || 0}</span>
+                                    </button>
+                                    <button class="angry-btn" onclick="handleReaction(${post.id}, ${reply.id}, 'angry')">
+                                        <i class="far fa-angry"></i>
+                                        <span class="reaction-count">${reply.reactions?.angry || 0}</span>
+                                    </button>
+                                    <span class="comment-time">${formatTime(reply.timestamp)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('') : ''}
+                </div>
+            </div>
+        </div>
+    `).join('') : '';
+
     postElement.innerHTML = `
         <img src="${post.author.avatar}" alt="Avatar" class="post-avatar">
         <div class="post-content">
@@ -657,44 +732,44 @@ function addPostToDOM(post) {
                     <button class="post-menu-button" onclick="togglePostMenu(${post.id})">
                         <i class="fas fa-ellipsis-h"></i>
                     </button>
-                    <div class="post-menu-dropdown" id="menu-${post.id}">
-                        <div class="post-menu-item edit" onclick="editPost(${post.id})">
-                            <i class="fas fa-edit"></i>
-                            Chỉnh sửa
-                        </div>
-                        <div class="post-menu-item edit-reactions" onclick="editPostReactions(${post.id})">
-                            <i class="fas fa-heart"></i>
-                            Sửa reactions
-                        </div>
-                        <div class="post-menu-item delete" onclick="deletePost(${post.id})">
-                            <i class="fas fa-trash"></i>
-                            Xóa
-                        </div>
-                    </div>
+<div class="post-menu-dropdown" id="menu-${post.id}">
+    <div class="post-menu-item edit" onclick="editPost(${post.id})">
+        <i class="fas fa-edit"></i>
+        Chỉnh sửa
+    </div>
+    <div class="post-menu-item edit-reactions" onclick="editPostReactions(${post.id})">
+        <i class="fas fa-heart"></i>
+        Sửa reactions
+    </div>
+    <div class="post-menu-item delete" onclick="deletePost(${post.id})">
+        <i class="fas fa-trash"></i>
+        Xóa
+    </div>
+</div>
                 </div>
             </div>
-            ${postContent}
+            ${post.content ? `<p class="post-text">${post.content}</p>` : ''}
             ${mediaHTML}
-            <div class="post-actions">
-                <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
-                    <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
-                    <span class="like-count">${post.likes || 0}</span>
-                </button>
-                <button class="action-button like2-button ${post.userLiked2 ? 'liked' : ''}" onclick="toggleLike2(${post.id})">
-                    <i class="${post.userLiked2 ? 'fas' : 'far'} fa-thumbs-up"></i>
-                    <span class="like2-count">${post.likes2 || 0}</span>
-                </button>
-                <button class="action-button" onclick="toggleComments(${post.id})">
-                    <i class="far fa-comment"></i>
-                    <span class="comment-count">${post.comments ? post.comments.length : 0}</span>
-                </button>
-            </div>
+    <div class="post-actions">
+        <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+            <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
+            <span class="like-count">${post.likes || 0}</span>
+        </button>
+        <button class="action-button like2-button ${post.userLiked2 ? 'liked' : ''}" onclick="toggleLike2(${post.id})">
+            <i class="${post.userLiked2 ? 'fas' : 'far'} fa-thumbs-up"></i>
+            <span class="like2-count">${post.likes2 || 0}</span>
+        </button>
+            <button class="action-button" onclick="toggleComments(${post.id})">
+                <i class="far fa-comment"></i>
+                <span class="comment-count">${post.comments ? post.comments.length : 0}</span>
+            </button>
+        </div>
             <div class="comments-section" id="comments-${post.id}">
                 <div class="comment-form">
-                    <textarea class="comment-input" 
-                          placeholder="Viết bình luận..." 
-                          onkeydown="handleComment(event, ${post.id})"
-                          oninput="autoResizeTextarea(this)"></textarea>
+            <textarea class="comment-input" 
+                      placeholder="Viết bình luận..." 
+                      onkeydown="handleComment(event, ${post.id})"
+                      oninput="autoResizeTextarea(this)"></textarea>
                 </div>
                 <div class="comment-list">
                     ${commentsHTML}
@@ -1656,16 +1731,6 @@ style.textContent = `
         overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
-    }
-`;
-document.head.appendChild(style);
-// Thêm CSS để giữ định dạng
-const style = document.createElement('style');
-style.textContent = `
-    .post-text {
-        white-space: pre-line;
-        word-wrap: break-word;
-        margin: 10px 0;
     }
 `;
 document.head.appendChild(style);
