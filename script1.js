@@ -308,17 +308,26 @@ document.addEventListener('DOMContentLoaded', function() {
 
 window.deletePost = function(postId) {
     if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
-        const posts = JSON.parse(localStorage.getItem('posts1') || '[]');
+        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
         const postIndex = posts.findIndex(p => p.id === postId);
         
         if (postIndex !== -1) {
+            // Xóa post khỏi mảng
             posts.splice(postIndex, 1);
-            localStorage.setItem('posts1', JSON.stringify(posts));
             
+            // Cập nhật localStorage
+            localStorage.setItem('posts', JSON.stringify(posts));
+            
+            // Xóa post khỏi DOM
             const postElement = document.querySelector(`[data-post-id="${postId}"]`);
             if (postElement) {
                 postElement.remove();
             }
+          // Cập nhật lại tab Media
+            updateMediaTab();
+            
+            // Thông báo xóa thành công (tùy chọn)
+            console.log('Đã xóa bài viết thành công');
         }
     }
 };
@@ -382,18 +391,20 @@ function restoreCommentStates() {
 }
 
 // Sửa lại hàm loadPosts
-// Sửa lại hàm loadPosts
 function loadPosts() {
-    const posts = JSON.parse(localStorage.getItem('posts1') || '[]');
+    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     postsContainer.innerHTML = '';
-    
-    posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    
-    posts.forEach(post => {
-        addPostToDOM(post);
+    posts.forEach(post => addPostToDOM(post));
+        setupCommentCollapse(post.id);
+        post.comments.forEach(comment => {
+            if (comment.replies && comment.replies.length > 0) {
+                setupReplyCollapse(comment.id);
+            }
+        });
     });
+    restoreCommentStates();
+    restoreReactionStates();
 }
-
 
 
 // Thay đổi phần xử lý comment input
@@ -575,12 +586,12 @@ function formatTime(timestamp) {
     return `${day} tháng ${month} năm ${year} lúc ${hours}:${minutes}`;
 }
 
-// Sửa lại hàm savePost
 function savePost(post) {
-    let posts = JSON.parse(localStorage.getItem('posts1') || '[]');
+    let posts = JSON.parse(localStorage.getItem('posts') || '[]');
     posts.unshift(post);
-    localStorage.setItem('posts1', JSON.stringify(posts));
+    localStorage.setItem('posts', JSON.stringify(posts));
 }
+
 
 // Khai báo biến global cho image modal
 let currentImageIndex = 0;
@@ -933,7 +944,6 @@ window.editComment = function(postId, commentId) {
 };
 // Kiểm tra đăng nhập và URL khi tải trang
 document.addEventListener('DOMContentLoaded', () => {
-        initTabNavigation();
     if (localStorage.getItem('isLoggedIn') !== 'true') {
         // Chưa đăng nhập, chuyển về trang login
         window.location.replace('https://vantritech.github.io/ChatWeb2/login.html');
@@ -1373,7 +1383,7 @@ function setupReplyCollapse(commentId) {
 
 // Thêm hàm editPost
 window.editPost = function(postId) {
-    const posts = JSON.parse(localStorage.getItem('posts1') || '[]');
+    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     const post = posts.find(p => p.id === postId);
     
     if (post) {
@@ -1479,7 +1489,7 @@ function addLike2Animation(button) {
 // Thêm hàm để cập nhật tab Media
 function updateMediaTab() {
     const mediaSection = document.getElementById('media-section');
-    const posts = JSON.parse(localStorage.getItem('posts1') || '[]');
+    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     
     // Lọc các bài đăng có chứa "@LanYouJin" trong nội dung chính của post (không tính comments)
     const allMedia = posts.reduce((acc, post) => {
@@ -1632,33 +1642,22 @@ document.querySelector('.user-profile-mini').insertAdjacentHTML('beforebegin', b
 function backupData() {
     try {
         const data = {
-            posts: JSON.parse(localStorage.getItem('posts1') || '[]'),
+            posts: JSON.parse(localStorage.getItem('posts') || '[]'),
             timestamp: new Date().toISOString()
         };
-        // ... rest of backup code ...
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `webchat_backup_${new Date().toISOString().slice(0,10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        alert('Đã sao lưu thành công!');
     } catch (error) {
         alert('Lỗi khi sao lưu: ' + error.message);
     }
-}
-
-function restoreData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const data = JSON.parse(e.target.result);
-            if (!data.posts) throw new Error('File không hợp lệ');
-            
-            localStorage.setItem('posts1', JSON.stringify(data.posts));
-            location.reload();
-            alert('Đã khôi phục thành công!');
-        } catch (error) {
-            alert('Lỗi khi khôi phục: ' + error.message);
-        }
-    };
-    reader.readAsText(file);
 }
 
 // Hàm khôi phục dữ liệu
@@ -1672,7 +1671,7 @@ function restoreData(event) {
             const data = JSON.parse(e.target.result);
             if (!data.posts) throw new Error('File không hợp lệ');
             
-            localStorage.setItem('posts1', JSON.stringify(data.posts));
+            localStorage.setItem('posts', JSON.stringify(data.posts));
             location.reload();
             alert('Đã khôi phục thành công!');
         } catch (error) {
@@ -1680,34 +1679,4 @@ function restoreData(event) {
         }
     };
     reader.readAsText(file);
-}
-// Thêm hàm xử lý tab navigation
-function initTabNavigation() {
-    const navItems = document.querySelectorAll('.nav-item');
-    const contentSections = document.querySelectorAll('.content-section');
-
-    navItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.preventDefault(); // Ngăn chặn hành vi mặc định của thẻ a
-
-            // Xóa class active từ tất cả nav items và content sections
-            navItems.forEach(nav => nav.classList.remove('active'));
-            contentSections.forEach(section => section.classList.remove('active'));
-
-            // Thêm class active cho nav item được click
-            item.classList.add('active');
-
-            // Hiển thị content section tương ứng
-            const tabId = item.getAttribute('data-tab');
-            const targetSection = document.getElementById(`${tabId}-section`);
-            if (targetSection) {
-                targetSection.classList.add('active');
-            }
-
-            // Cập nhật Media tab nếu cần
-            if (tabId === 'media') {
-                updateMediaTab();
-            }
-        });
-    });
 }
