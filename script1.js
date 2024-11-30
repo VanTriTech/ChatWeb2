@@ -382,34 +382,20 @@ function loadPosts() {
     posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
     posts.forEach(post => {
-        // Tạo element cho post
-        const postElement = document.createElement('div');
-        postElement.className = 'post';
-        postElement.setAttribute('data-post-id', post.id);
-        
-        // Kiểm tra các từ khóa cần ẩn chỉ trong nội dung chính của post
-        const containsBlockedContent = (
-            (post.content && (
-                post.content.toLowerCase().includes('@lanyoujin') ||
-                post.content.toLowerCase().includes('@18+')
-            ))
-        );
+        // Kiểm tra xem post có tồn tại không
+        if (!post) return;
 
-        if (containsBlockedContent) {
-            // Nếu chứa nội dung cần ẩn, thêm class ẩn và style display none
-            postElement.classList.add('hidden-post');
-            postElement.style.display = 'none';
-        } else {
-            // Nếu không chứa nội dung cần ẩn, thêm post vào DOM như bình thường
-            addPostToDOM(post);
-            setupCommentCollapse(post.id);
-            if (post.comments) {
-                post.comments.forEach(comment => {
-                    if (comment.replies && comment.replies.length > 0) {
-                        setupReplyCollapse(comment.id);
-                    }
-                });
-            }
+        // Thêm post vào DOM trực tiếp mà không cần kiểm tra nội dung
+        addPostToDOM(post);
+        
+        // Thiết lập các tính năng tương tác
+        setupCommentCollapse(post.id);
+        if (post.comments) {
+            post.comments.forEach(comment => {
+                if (comment.replies && comment.replies.length > 0) {
+                    setupReplyCollapse(comment.id);
+                }
+            });
         }
     });
     
@@ -610,6 +596,10 @@ function addPostToDOM(post) {
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
+    
+    // Thêm nội dung post như bình thường
+    const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
+    const postContent = post.content ? `<p class="post-text">${post.content.replace(/\n/g, '<br>')}</p>` : '';
 
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
     const commentsHTML = post.comments ? post.comments.map(comment => `
