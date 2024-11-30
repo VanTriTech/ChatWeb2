@@ -951,6 +951,7 @@ window.editComment = function(postId, commentId) {
 };
 // Kiểm tra đăng nhập và URL khi tải trang
 document.addEventListener('DOMContentLoaded', () => {
+        initTabNavigation();
     if (localStorage.getItem('isLoggedIn') !== 'true') {
         // Chưa đăng nhập, chuyển về trang login
         window.location.replace('https://vantritech.github.io/ChatWeb2/login.html');
@@ -1687,127 +1688,33 @@ function restoreData(event) {
     };
     reader.readAsText(file);
 }
-// Thêm biến để theo dõi trạng thái đăng nhập
-let isLoggedIn = true;
+// Thêm hàm xử lý tab navigation
+function initTabNavigation() {
+    const navItems = document.querySelectorAll('.nav-item');
+    const contentSections = document.querySelectorAll('.content-section');
 
-// Khởi tạo các biến và event listeners khi trang tải
-document.addEventListener('DOMContentLoaded', function() {
-    // Khởi tạo localStorage nếu chưa có
-    if (!localStorage.getItem('posts')) {
-        localStorage.setItem('posts', '[]');
-    }
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault(); // Ngăn chặn hành vi mặc định của thẻ a
 
-    // Thiết lập các event listeners
-    setupEventListeners();
-    
-    // Load và hiển thị posts
-    loadPosts();
-    
-    // Cập nhật tab Media
-    updateMediaTab();
-});
+            // Xóa class active từ tất cả nav items và content sections
+            navItems.forEach(nav => nav.classList.remove('active'));
+            contentSections.forEach(section => section.classList.remove('active'));
 
-function setupEventListeners() {
-    // Event listener cho post input
-    const postInput = document.getElementById('post-input');
-    const postButton = document.getElementById('post-button');
-    const mediaInput = document.getElementById('media-input');
-    
-    postInput.addEventListener('input', function() {
-        postButton.disabled = !this.value.trim();
+            // Thêm class active cho nav item được click
+            item.classList.add('active');
+
+            // Hiển thị content section tương ứng
+            const tabId = item.getAttribute('data-tab');
+            const targetSection = document.getElementById(`${tabId}-section`);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+
+            // Cập nhật Media tab nếu cần
+            if (tabId === 'media') {
+                updateMediaTab();
+            }
+        });
     });
-
-    // Event listener cho nút đăng bài
-    postButton.addEventListener('click', createPost);
-    
-    // Event listener cho upload media
-    mediaInput.addEventListener('change', handleMediaUpload);
-    
-    // Event listeners cho tabs
-    setupTabNavigation();
 }
-
-// Các hàm xử lý chính
-function createPost() {
-    const postInput = document.getElementById('post-input');
-    const content = postInput.value.trim();
-    
-    if (!content) return;
-    
-    const newPost = {
-        id: Date.now(),
-        content: content,
-        author: {
-            name: '兰幼金',
-            handle: '@LanYouJin',
-            avatar: document.querySelector('.profile-avatar img').src
-        },
-        timestamp: new Date().toISOString(),
-        likes: 0,
-        comments: [],
-        media: [] // Thêm mảng media
-    };
-    
-    // Lưu post mới
-    const posts = JSON.parse(localStorage.getItem('posts'));
-    posts.unshift(newPost);
-    localStorage.setItem('posts', JSON.stringify(posts));
-    
-    // Reset form và reload posts
-    postInput.value = '';
-    document.getElementById('post-button').disabled = true;
-    loadPosts();
-}
-
-// ... (các hàm khác giữ nguyên như trong script.js)
-
-// Thêm các hàm mới cần thiết
-function handleMediaUpload(event) {
-    const files = Array.from(event.target.files);
-    const mediaPreview = document.createElement('div');
-    mediaPreview.className = 'media-preview';
-    
-    files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            // Xử lý preview media
-            const previewItem = createMediaPreviewItem(e.target.result, file.type);
-            mediaPreview.appendChild(previewItem);
-        };
-        reader.readAsDataURL(file);
-    });
-    
-    // Thêm preview vào form
-    const postForm = document.querySelector('.post-form');
-    const existingPreview = postForm.querySelector('.media-preview');
-    if (existingPreview) {
-        existingPreview.remove();
-    }
-    postForm.appendChild(mediaPreview);
-}
-
-// Thêm các hàm phụ trợ khác
-function createMediaPreviewItem(url, type) {
-    const previewItem = document.createElement('div');
-    previewItem.className = 'preview-item';
-    
-    if (type.startsWith('image/')) {
-        const img = document.createElement('img');
-        img.src = url;
-        previewItem.appendChild(img);
-    } else if (type.startsWith('video/')) {
-        const video = document.createElement('video');
-        video.src = url;
-        video.controls = true;
-        previewItem.appendChild(video);
-    }
-    
-    return previewItem;
-}
-
-// Export các hàm cần thiết
-window.createPost = createPost;
-window.handleMediaUpload = handleMediaUpload;
-window.toggleLike = toggleLike;
-window.deletePost = deletePost;
-window.editPost = editPost;
