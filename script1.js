@@ -400,28 +400,25 @@ function loadPosts() {
     posts.sort(() => Math.random() - 0.5);
     
     posts.forEach(post => {
-        // Tạo element cho post
-        const postElement = document.createElement('div');
-        postElement.className = 'post';
-        postElement.setAttribute('data-post-id', post.id);
+        // Kiểm tra nếu post hoặc comments chứa @LanYouJin
+        const containsLanYouJin = (post.content && post.content.includes('@LanYouJin')) || 
+            (post.comments && post.comments.some(comment => 
+                comment.content.includes('@LanYouJin') || 
+                (comment.replies && comment.replies.some(reply => 
+                    reply.content.includes('@LanYouJin')
+                ))
+            ));
         
-        // Kiểm tra nếu post chứa @LanYouJin
-        const containsLanYouJin = post.content && post.content.includes('@LanYouJin');
-        
-        // Thêm class ẩn nếu chứa @LanYouJin
-        if (containsLanYouJin) {
-            postElement.classList.add('hidden-post');
-            postElement.style.display = 'none'; // Ẩn post
+        if (!containsLanYouJin) {
+            // Chỉ hiển thị post không chứa @LanYouJin
+            addPostToDOM(post);
+            setupCommentCollapse(post.id);
+            post.comments.forEach(comment => {
+                if (comment.replies && comment.replies.length > 0) {
+                    setupReplyCollapse(comment.id);
+                }
+            });
         }
-        
-        // Thêm post vào DOM
-        addPostToDOM(post);
-        setupCommentCollapse(post.id);
-        post.comments.forEach(comment => {
-            if (comment.replies && comment.replies.length > 0) {
-                setupReplyCollapse(comment.id);
-            }
-        });
     });
     
     restoreCommentStates();
