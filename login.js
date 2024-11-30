@@ -218,7 +218,7 @@ loginForm.addEventListener('submit', async (event) => {
         button.disabled = true;
         
         // Kiểm tra nếu là tài khoản Admin
-        if (username === 'Admin' && password === 'Admin') {
+        if (username === 'admin' && password === 'admin') {
             // Login ngay lập tức
             localStorage.setItem('isLoggedIn', 'true');
             localStorage.setItem('currentUser', username);
