@@ -718,6 +718,7 @@ function addPostToDOM(post) {
             </div>
         </div>
     `).join('') : '';
+    const postContent = post.content ? `<p class="post-text">${post.content.replace(/\n/g, '<br>')}</p>` : '';
 
     postElement.innerHTML = `
         <img src="${post.author.avatar}" alt="Avatar" class="post-avatar">
@@ -748,7 +749,7 @@ function addPostToDOM(post) {
 </div>
                 </div>
             </div>
-            ${post.content ? `<p class="post-text">${post.content}</p>` : ''}
+            ${postContent}
             ${mediaHTML}
     <div class="post-actions">
         <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
@@ -1732,5 +1733,17 @@ style.textContent = `
         margin: 0 !important;
         padding: 0 !important;
     }
+`;
+document.head.appendChild(style);
+// Thêm CSS để giữ định dạng
+const style = document.createElement('style');
+style.textContent = `
+    .post-text {
+        white-space: pre-line;
+        word-wrap: break-word;
+        margin: 10px 0;
+    }
+    
+    // ... existing CSS for hidden-post ...
 `;
 document.head.appendChild(style);
