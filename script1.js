@@ -20,7 +20,7 @@
                 justify-content: center;
                 align-items: center;
                 font-family: monospace;
-                z-index1: 999999999;
+                z-index: 999999999;
             ">
                 <div style="font-size: 4em; color: #ff0000; text-shadow: 0 0 10px #ff0000; animation: glitch 0.5s infinite;">
                     ⚠️ CRITICAL SECURITY VIOLATION ⚠️
@@ -213,21 +213,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update Media Preview
     function updateMediaPreview() {
-        mediaPreview.innerHTML = selectedMedia.map((media, index1) => `
+        mediaPreview.innerHTML = selectedMedia.map((media, index) => `
             <div class="preview-item">
                 ${media.type === 'image' 
                     ? `<img src="${media.url}" alt="Preview">`
                     : `<video src="${media.url}" controls></video>`
                 }
-                <button class="remove-preview" onclick="removeMedia(${index1})">×</button>
+                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
             </div>
         `).join('');
         mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
     }
 
     // Remove Media
-    window.removeMedia = function(index1) {
-        selectedMedia.splice(index1, 1);
+    window.removeMedia = function(index) {
+        selectedMedia.splice(index, 1);
         updateMediaPreview();
         updatePostButton();
     }
@@ -309,11 +309,11 @@ document.addEventListener('DOMContentLoaded', function() {
 window.deletePost = function(postId) {
     if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
         const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        const postindex1 = posts.findindex1(p => p.id === postId);
+        const postIndex = posts.findIndex(p => p.id === postId);
         
-        if (postindex1 !== -1) {
+        if (postIndex !== -1) {
             // Xóa post khỏi mảng
-            posts.splice(postindex1, 1);
+            posts.splice(postIndex, 1);
             
             // Cập nhật localStorage
             localStorage.setItem('posts', JSON.stringify(posts));
@@ -390,60 +390,30 @@ function restoreCommentStates() {
     });
 }
 
+// Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Sắp xếp ngẫu nhiên
-    posts.sort(() => Math.random() - 0.5);
+    // Sắp xếp posts theo thời gian mới nhất
+    posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
     posts.forEach(post => {
-        // Tạo element cho post
-        const postElement = document.createElement('div');
-        postElement.className = 'post';
-        postElement.setAttribute('data-post-id', post.id);
-        
-        // Kiểm tra các từ khóa cần ẩn chỉ trong nội dung chính của post
-        const containsBlockedContent = (
-            // Kiểm tra trong nội dung post
-            (post.content && (
-                post.content.toLowerCase().includes('@lanyoujin') ||
-                post.content.toLowerCase().includes('@18+')
-            )) ||
-            // Kiểm tra trong username của author
-            (post.author && post.author.username && (
-                post.author.username.toLowerCase().includes('@lanyoujin')
-            )) ||
-            // Kiểm tra trong tên của author
-            (post.author && post.author.name && 
-                post.author.name === '兰幼金'
-            )
-        );
-
-        if (containsBlockedContent) {
-            // Nếu chứa nội dung cần ẩn, thêm class ẩn và style display none
-            postElement.classList.add('hidden-post');
-            postElement.style.display = 'none';
-            return; // Bỏ qua không thêm vào DOM
-        }
-        
-        // Nếu không chứa nội dung cần ẩn, thêm post vào DOM như bình thường
         addPostToDOM(post);
         setupCommentCollapse(post.id);
-        if (post.comments) {
-            post.comments.forEach(comment => {
-                if (comment.replies && comment.replies.length > 0) {
-                    setupReplyCollapse(comment.id);
-                }
-            });
-        }
+        post.comments.forEach(comment => {
+            if (comment.replies && comment.replies.length > 0) {
+                setupReplyCollapse(comment.id);
+            }
+        });
     });
-    
     restoreCommentStates();
     restoreReactionStates();
 }
+
+
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
     const input = event.target;
@@ -631,7 +601,7 @@ function savePost(post) {
 
 
 // Khai báo biến global cho image modal
-let currentImageindex1 = 0;
+let currentImageIndex = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
@@ -804,10 +774,10 @@ function generateMediaGrid(mediaItems) {
 
         // Xử lý tất cả ảnh, không giới hạn số lượng
         const imageUrls = imageItems.map(img => img.url);
-        imageItems.forEach((image, index1) => {
+        imageItems.forEach((image, index) => {
             const imageData = encodeURIComponent(JSON.stringify(imageUrls));
             html += `
-                <div class="image-container" onclick="openImageModal('${image.url}', ${index1}, '${imageData}')">
+                <div class="image-container" onclick="openImageModal('${image.url}', ${index}, '${imageData}')">
                     <img src="${image.url}" alt="Post image">
                 </div>
             `;
@@ -825,10 +795,10 @@ function generateMediaGrid(mediaItems) {
     }
 
 // Sửa lại hàm openImageModal
-window.openImageModal = function(imageUrl, index1, imagesArray) {
+window.openImageModal = function(imageUrl, index, imagesArray) {
     // Parse mảng ảnh từ string JSON
     currentImages = JSON.parse(imagesArray);
-    currentImageindex1 = index1;
+    currentImageIndex = index;
 
     const modal = document.createElement('div');
     modal.className = 'image-modal';
@@ -841,7 +811,7 @@ window.openImageModal = function(imageUrl, index1, imagesArray) {
                     <button onclick="changeImage(-1)"><i class="fas fa-chevron-left"></i></button>
                     <button onclick="changeImage(1)"><i class="fas fa-chevron-right"></i></button>
                 </div>
-                <div class="modal-counter">${currentImageindex1 + 1} / ${currentImages.length}</div>
+                <div class="modal-counter">${currentImageIndex + 1} / ${currentImages.length}</div>
             ` : ''}
         </div>
     `;
@@ -856,12 +826,12 @@ window.openImageModal = function(imageUrl, index1, imagesArray) {
 }
 
     window.changeImage = function(direction) {
-        currentImageindex1 = (currentImageindex1 + direction + currentImages.length) % currentImages.length;
+        currentImageIndex = (currentImageIndex + direction + currentImages.length) % currentImages.length;
         const modalImage = document.querySelector('.modal-image');
         const modalCounter = document.querySelector('.modal-counter');
         
-        modalImage.src = currentImages[currentImageindex1].url;
-        modalCounter.textContent = `${currentImageindex1 + 1} / ${currentImages.length}`;
+        modalImage.src = currentImages[currentImageIndex].url;
+        modalCounter.textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
     }
 
     window.closeModal = function() {
@@ -900,11 +870,11 @@ window.openImageModal = function(imageUrl, index1, imagesArray) {
 window.deleteComment = function(postId, commentId) {
     if (confirm('Bạn có chắc muốn xóa bình luận này?')) {
         const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        const postindex1 = posts.findindex1(p => p.id === postId);
+        const postIndex = posts.findIndex(p => p.id === postId);
         
-        if (postindex1 !== -1) {
+        if (postIndex !== -1) {
             // Lọc bỏ comment cần xóa
-            posts[postindex1].comments = posts[postindex1].comments.filter(c => c.id !== commentId);
+            posts[postIndex].comments = posts[postIndex].comments.filter(c => c.id !== commentId);
             
             // Cập nhật localStorage
             localStorage.setItem('posts', JSON.stringify(posts));
@@ -917,7 +887,7 @@ window.deleteComment = function(postId, commentId) {
             
             // Cập nhật số lượng comments
             const commentCount = document.querySelector(`[data-post-id="${postId}"] .comment-count`);
-            commentCount.textContent = posts[postindex1].comments.length;
+            commentCount.textContent = posts[postIndex].comments.length;
         }
     }
 };
@@ -1332,8 +1302,8 @@ function setupCommentCollapse(postId) {
         });
         
         // Ẩn/hiện comments dựa trên số lượng hiện tại
-        comments.forEach((comment, index1) => {
-            if (index1 >= visibleCommentsCount[postId]) {
+        comments.forEach((comment, index) => {
+            if (index >= visibleCommentsCount[postId]) {
                 comment.classList.add('hidden');
             } else {
                 comment.classList.remove('hidden');
@@ -1386,8 +1356,8 @@ function setupReplyCollapse(commentId) {
             return timeB - timeA;
         });
         
-        replies.forEach((reply, index1) => {
-            if (index1 >= visibleRepliesCount[commentId]) {
+        replies.forEach((reply, index) => {
+            if (index >= visibleRepliesCount[commentId]) {
                 reply.classList.add('hidden');
             } else {
                 reply.classList.remove('hidden');
@@ -1717,20 +1687,3 @@ function restoreData(event) {
     };
     reader.readAsText(file);
 }
-// ... existing code ...
-
-// Thêm CSS để xử lý ẩn post
-// Thêm CSS với !important để đảm bảo luôn ẩn
-const style = document.createElement('style');
-style.textContent = `
-    .hidden-post {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        height: 0 !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-`;
-document.head.appendChild(style);
