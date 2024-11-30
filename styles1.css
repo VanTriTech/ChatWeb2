@@ -139,7 +139,7 @@ body {
 .profile-header {
     border-bottom: 1px solid #2f3336;
     position: relative; /* Thêm position relative */
-    padding-bottom: 80px; /* Thêm padding bottom để tạo khoảng cách */
+    padding-bottom: 80px; /* Thêm padding bottom */
 }
 
 .banner-image {
@@ -159,21 +159,17 @@ body {
 
 .profile-info {
     padding: 16px;
-    position: absolute; /* Đổi thành absolute */
-    bottom: 0; /* Đặt ở dưới cùng của profile-header */
-    left: 0;
-    right: 0;
-    background: linear-gradient(transparent, #000); /* Thêm gradient để text dễ đọc */
+    position: relative;
+    margin-top: 60px; /* Tăng khoảng cách từ banner đến profile info */
 }
+
 
 .profile-avatar {
     position: absolute;
-    bottom: 100%; /* Đặt avatar lên trên profile-info */
+    top: -80px; /* Điều chỉnh vị trí avatar lên trên */
     left: 16px;
-    margin-bottom: 10px; /* Tạo khoảng cách với profile-info */
-    margin-top: 0; /* Bỏ margin top */
+    z-index: 2;
 }
-
 .profile-avatar img {
     width: 133px;
     height: 133px;
@@ -181,7 +177,6 @@ body {
     border: 4px solid #000;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-
 .profile-name {
     font-size: 20px;
     font-weight: bold;
