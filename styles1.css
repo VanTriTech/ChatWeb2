@@ -138,44 +138,46 @@ body {
 /* Profile Header */
 .profile-header {
     border-bottom: 1px solid #2f3336;
-    position: relative; /* Thêm position relative */
-    padding-bottom: 80px; /* Thêm padding bottom */
+    position: relative;
+    margin-bottom: 20px;
 }
 
 .banner-image {
-    height: 200px; /* Giảm chiều cao banner */
-    overflow: hidden;
+    width: 100%;
+    height: 200px;
     position: relative;
-    margin-top: 0; /* Bỏ margin top */
+    overflow: hidden;
+    background-color: #000;
 }
+
 
 .banner-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    object-position: center;
 }
 
 
 .profile-info {
-    padding: 16px;
     position: relative;
-    margin-top: 60px; /* Tăng khoảng cách từ banner đến profile info */
+    padding: 0 16px;
+    margin-top: 60px; /* Tạo khoảng cách cho avatar */
 }
 
 
 .profile-avatar {
     position: absolute;
-    top: -80px; /* Điều chỉnh vị trí avatar lên trên */
     left: 16px;
+    bottom: -140px; /* Điều chỉnh vị trí avatar xuống dưới banner */
+    border: 4px solid #000;
+    border-radius: 50%;
     z-index: 2;
 }
 .profile-avatar img {
     width: 133px;
     height: 133px;
     border-radius: 50%;
-    border: 4px solid #000;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    background-color: #000;
 }
 .profile-name {
     font-size: 20px;
