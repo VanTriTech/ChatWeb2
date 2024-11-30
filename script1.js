@@ -396,10 +396,25 @@ function loadPosts() {
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Thay đổi cách sắp xếp thành ngẫu nhiên
+    // Sắp xếp ngẫu nhiên
     posts.sort(() => Math.random() - 0.5);
     
     posts.forEach(post => {
+        // Tạo element cho post
+        const postElement = document.createElement('div');
+        postElement.className = 'post';
+        postElement.setAttribute('data-post-id', post.id);
+        
+        // Kiểm tra nếu post chứa @LanYouJin
+        const containsLanYouJin = post.content && post.content.includes('@LanYouJin');
+        
+        // Thêm class ẩn nếu chứa @LanYouJin
+        if (containsLanYouJin) {
+            postElement.classList.add('hidden-post');
+            postElement.style.display = 'none'; // Ẩn post
+        }
+        
+        // Thêm post vào DOM
         addPostToDOM(post);
         setupCommentCollapse(post.id);
         post.comments.forEach(comment => {
