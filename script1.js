@@ -597,8 +597,6 @@ function addPostToDOM(post) {
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
-    const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
-    const postContent = post.content ? `<p class="post-text">${post.content.replace(/\n/g, '<br>')}</p>` : '';
 
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
     const commentsHTML = post.comments ? post.comments.map(comment => `
