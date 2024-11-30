@@ -253,6 +253,7 @@ loginForm.addEventListener('submit', async (event) => {
         alert('Tài khoản hoặc mật khẩu không đúng!');
     }
 });
+    });
 
 // Xử lý chuyển hướng
 window.addEventListener('storage', (e) => {
