@@ -44,6 +44,24 @@
             </div>
         `;
 
+        // Thêm style cho animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes glitch {
+                0% { transform: translate(0) skew(0deg) }
+                20% { transform: translate(-2px, 2px) skew(2deg) }
+                40% { transform: translate(-2px, -2px) skew(-2deg) }
+                60% { transform: translate(2px, 2px) skew(-2deg) }
+                80% { transform: translate(2px, -2px) skew(2deg) }
+                100% { transform: translate(0) skew(0deg) }
+            }
+            @keyframes blink {
+                0% { opacity: 1 }
+                50% { opacity: 0 }
+                100% { opacity: 1 }
+            }
+        `;
+        document.head.appendChild(style);
 
         // Log IP
         fetch('https://api.ipify.org?format=json')
@@ -378,17 +396,41 @@ function loadPosts() {
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Sắp xếp bài đăng theo thời gian mới nhất
-    posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    // Sắp xếp ngẫu nhiên
+    posts.sort(() => Math.random() - 0.5);
     
     posts.forEach(post => {
-        // Kiểm tra xem post có tồn tại không
-        if (!post) return;
-
-        // Thêm post vào DOM trực tiếp mà không cần kiểm tra nội dung
-        addPostToDOM(post);
+        // Tạo element cho post
+        const postElement = document.createElement('div');
+        postElement.className = 'post';
+        postElement.setAttribute('data-post-id', post.id);
         
-        // Thiết lập các tính năng tương tác
+        // Kiểm tra các từ khóa cần ẩn chỉ trong nội dung chính của post
+        const containsBlockedContent = (
+            // Kiểm tra trong nội dung post
+            (post.content && (
+                post.content.toLowerCase().includes('@lanyoujin') ||
+                post.content.toLowerCase().includes('@18+')
+            )) ||
+            // Kiểm tra trong username của author
+            (post.author && post.author.username && (
+                post.author.username.toLowerCase().includes('@lanyoujin')
+            )) ||
+            // Kiểm tra trong tên của author
+            (post.author && post.author.name && 
+                post.author.name === '兰幼金'
+            )
+        );
+
+        if (containsBlockedContent) {
+            // Nếu chứa nội dung cần ẩn, thêm class ẩn và style display none
+            postElement.classList.add('hidden-post');
+            postElement.style.display = 'none';
+            return; // Bỏ qua không thêm vào DOM
+        }
+        
+        // Nếu không chứa nội dung cần ẩn, thêm post vào DOM như bình thường
+        addPostToDOM(post);
         setupCommentCollapse(post.id);
         if (post.comments) {
             post.comments.forEach(comment => {
@@ -596,10 +638,6 @@ function addPostToDOM(post) {
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
-    
-    // Thêm nội dung post như bình thường
-    const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
-    const postContent = post.content ? `<p class="post-text">${post.content.replace(/\n/g, '<br>')}</p>` : '';
 
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
     const commentsHTML = post.comments ? post.comments.map(comment => `
@@ -680,7 +718,6 @@ function addPostToDOM(post) {
             </div>
         </div>
     `).join('') : '';
-    const postContent = post.content ? `<p class="post-text">${post.content.replace(/\n/g, '<br>')}</p>` : '';
 
     postElement.innerHTML = `
         <img src="${post.author.avatar}" alt="Avatar" class="post-avatar">
@@ -711,7 +748,7 @@ function addPostToDOM(post) {
 </div>
                 </div>
             </div>
-            ${postContent}
+            ${post.content ? `<p class="post-text">${post.content}</p>` : ''}
             ${mediaHTML}
     <div class="post-actions">
         <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
@@ -1682,6 +1719,8 @@ function restoreData(event) {
 }
 // ... existing code ...
 
+// Thêm CSS để xử lý ẩn post
+// Thêm CSS với !important để đảm bảo luôn ẩn
 const style = document.createElement('style');
 style.textContent = `
     .hidden-post {
@@ -1692,24 +1731,6 @@ style.textContent = `
         overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
-    }
-    .post-text {
-        white-space: pre-line;
-        word-wrap: break-word;
-        margin: 10px 0;
-    }
-    @keyframes glitch {
-        0% { transform: translate(0) skew(0deg) }
-        20% { transform: translate(-2px, 2px) skew(2deg) }
-        40% { transform: translate(-2px, -2px) skew(-2deg) }
-        60% { transform: translate(2px, 2px) skew(-2deg) }
-        80% { transform: translate(2px, -2px) skew(2deg) }
-        100% { transform: translate(0) skew(0deg) }
-    }
-    @keyframes blink {
-        0% { opacity: 1 }
-        50% { opacity: 0 }
-        100% { opacity: 1 }
     }
 `;
 document.head.appendChild(style);
