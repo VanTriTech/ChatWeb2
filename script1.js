@@ -780,36 +780,37 @@ function addPostToDOM(post) {
 }
 
 
-function generateMediaGrid(mediaItems) {
-    if (!mediaItems.length) return '';
+// Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
+    function generateMediaGrid(mediaItems) {
+        if (!mediaItems.length) return '';
 
-    const imageItems = mediaItems.filter(item => item.type === 'image');
-    const videoItems = mediaItems.filter(item => item.type === 'video');
+        const imageItems = mediaItems.filter(item => item.type === 'image');
+        const videoItems = mediaItems.filter(item => item.type === 'video');
 
-    let gridClass = getMediaGridClass(mediaItems.length);
-    let html = `<div class="post-media ${gridClass}">`;
+        let gridClass = getMediaGridClass(mediaItems.length);
+        let html = `<div class="post-media ${gridClass}">`;
 
-    // Xử lý videos
-    videoItems.forEach(video => {
-        html += `
-            <div class="video-container">
-                <video src="${video.url}" controls style="max-width: 100%; height: auto;"></video>
-            </div>
-        `;
-    });
+        // Xử lý videos
+        videoItems.forEach(video => {
+            html += `
+                <div class="video-container">
+                    <video src="${video.url}" controls></video>
+                </div>
+            `;
+        });
 
-    // Xử lý images
-    imageItems.forEach((image, index) => {
-        html += `
-            <div class="image-container">
-                <img src="${image.url}" alt="Post image">
-            </div>
-        `;
-    });
+        // Xử lý images
+        imageItems.forEach((image, index) => {
+            html += `
+                <div class="image-container">
+                    <img src="${image.url}" alt="Post image">
+                </div>
+            `;
+        });
 
-    html += '</div>';
-    return html;
-}
+        html += '</div>';
+        return html;
+    }
 
     function getMediaGridClass(count) {
         if (count === 1) return 'single-image';
@@ -1522,16 +1523,14 @@ function updateMediaTab() {
     const mediaSection = document.getElementById('media-section');
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     
-    // Lọc các bài đăng có chứa "@LanYouJin" trong nội dung chính của post (không tính comments)
+    // Lọc các bài đăng có media của LanYouJin
     const allMedia = posts.reduce((acc, post) => {
-        // Kiểm tra nội dung chính của post có chứa @LanYouJin
         const postContent = post.content || '';
         if (
             postContent.toLowerCase().includes("@lanyoujin") &&
             post.media && 
             post.media.length > 0
         ) {
-            // Thêm thông tin post vào mỗi media item
             const mediaWithPostInfo = post.media.map(media => ({
                 ...media,
                 postId: post.id,
@@ -1544,41 +1543,45 @@ function updateMediaTab() {
         return acc;
     }, []);
     
-    // Sắp xếp media theo thời gian mới nhất
+    // Sắp xếp theo thời gian mới nhất
     allMedia.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
-    // Tạo grid hiển thị media
+    // Tạo grid container
     const mediaGrid = document.createElement('div');
-    mediaGrid.className = 'post-media multiple-images';
+    mediaGrid.className = 'media-grid';
     
-    // Tạo HTML cho từng media item
+    // Tạo HTML cho media items
     const mediaHTML = allMedia.map(media => {
         const mediaOverlay = `
-            <div class="media-overlay">
-                <span class="media-tag">@LanYouJin</span>
-                <span class="media-author">by ${media.author.name}</span>
+            <div class="media-info">
+                <span class="media-time">${formatTime(media.timestamp)}</span>
+                <span class="media-author">${media.author.name}</span>
             </div>
         `;
 
-        if (media.type === 'image') {
-            const imageData = encodeURIComponent(JSON.stringify([media]));
+        if (media.type === 'video') {
             return `
-                <div class="image-container" onclick="openImageModal('${media.url}', 0, '${imageData}')">
-                    <img src="${media.url}" alt="Media content">
-                    ${mediaOverlay}
+                <div class="media-item video">
+                    <div class="video-wrapper">
+                        <video src="${media.url}" controls preload="metadata">
+                            Your browser does not support video playback.
+                        </video>
+                        ${mediaOverlay}
+                    </div>
                 </div>
             `;
-        } else if (media.type === 'video') {
+        } else if (media.type === 'image') {
+            const imageData = encodeURIComponent(JSON.stringify([media]));
             return `
-                <div class="video-container">
-                    <video src="${media.url}" controls></video>
+                <div class="media-item image" onclick="openImageModal('${media.url}', 0, '${imageData}')">
+                    <img src="${media.url}" alt="Media content">
                     ${mediaOverlay}
                 </div>
             `;
         }
         return '';
     }).join('');
-    
+
     mediaGrid.innerHTML = mediaHTML;
     
     // Xóa nội dung cũ và thêm grid mới
