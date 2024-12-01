@@ -1747,3 +1747,16 @@ body {
 .twitter-input-buttons button:hover {
     opacity: 0.9;
 }
+.twitter-video-container {
+    width: 100%;
+    max-width: 550px;
+    margin: 0 auto;
+    background: #1a1a1a;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.twitter-video-container iframe {
+    width: 100% !important;
+    border: none !important;
+}
