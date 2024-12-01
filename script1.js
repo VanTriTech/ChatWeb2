@@ -188,28 +188,33 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
-    mediaInput.addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        files.forEach(file => {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
-                return;
-            }
+mediaInput.addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+        // Tăng giới hạn kích thước cho video (ví dụ: 100MB)
+        const maxSize = 100 * 1024 * 1024; // 100MB
+        if (file.size > maxSize) {
+            alert('File quá lớn. Vui lòng chọn file nhỏ hơn 100MB.');
+            return;
+        }
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-                selectedMedia.push({
-                    type: mediaType,
-                    url: e.target.result,
-                    file: file
-                });
-                updateMediaPreview();
-                updatePostButton();
-            }
-            reader.readAsDataURL(file);
-        });
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+            // Xử lý riêng cho file .mkv
+            const isMKV = file.name.toLowerCase().endsWith('.mkv');
+            
+            selectedMedia.push({
+                type: isMKV ? 'video' : mediaType,
+                url: e.target.result,
+                file: file
+            });
+            updateMediaPreview();
+            updatePostButton();
+        }
+        reader.readAsDataURL(file);
     });
+});
 
     // Update Media Preview
     function updateMediaPreview() {
@@ -1739,3 +1744,6 @@ function addGitHubVideo() {
 
     updatePostButton();
 }
+// Thêm .mkv vào accept attribute của input
+const mediaInput = document.getElementById('media-input');
+mediaInput.setAttribute('accept', 'image/*,video/*,.mkv');
