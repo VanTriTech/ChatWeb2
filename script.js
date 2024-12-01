@@ -190,33 +190,49 @@ document.addEventListener('DOMContentLoaded', function() {
     // Media Upload Handler
 // Sửa phần xử lý media input
 // Sửa phần xử lý media input để hỗ trợ MKV
-mediaInput.addEventListener('change', function(e) {
+// Sửa lại hàm xử lý media input
+mediaInput.addEventListener('change', async function(e) {
     const files = Array.from(e.target.files);
     
     // Reset selectedMedia array
     selectedMedia = [];
     
-    files.forEach(file => {
+    for (const file of files) {
         const maxSize = 100 * 1024 * 1024; // 100MB
         if (file.size > maxSize) {
             alert('File quá lớn. Vui lòng chọn file nhỏ hơn 100MB.');
-            return;
+            continue;
         }
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
+        try {
+            // Xử lý file thành base64
+            const base64Data = await convertFileToBase64(file);
             const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+            
             selectedMedia.push({
                 type: mediaType,
-                url: e.target.result,
-                file: file
+                url: base64Data,
+                originalName: file.name
             });
+            
             updateMediaPreview();
             updatePostButton();
+        } catch (error) {
+            console.error('Lỗi khi xử lý file:', error);
+            alert('Có lỗi khi xử lý file. Vui lòng thử lại.');
         }
+    }
+});
+
+// Thêm hàm chuyển đổi file thành base64
+function convertFileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
         reader.readAsDataURL(file);
     });
-});
+}
 // Thêm hàm clear form
 function clearPostForm() {
     postInput.value = '';
@@ -278,7 +294,8 @@ async function createPost() {
         },
         media: selectedMedia.map(media => ({
             type: media.type,
-            url: media.url
+            url: media.url,
+            originalName: media.originalName
         })),
         reactions: {
             likes: 0,
@@ -289,6 +306,24 @@ async function createPost() {
         comments: [],
         timestamp: new Date().toISOString()
     };
+
+    try {
+        // Thêm post vào DOM
+        addPostToDOM(post);
+
+        // Lưu vào localStorage
+        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+        posts.unshift(post);
+        localStorage.setItem('posts', JSON.stringify(posts));
+
+        // Reset form
+        clearPostForm();
+        
+    } catch (error) {
+        console.error('Lỗi khi tạo bài đăng:', error);
+        alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại.');
+    }
+}
 
     // Thêm post vào DOM
     addPostToDOM(post);
@@ -809,31 +844,28 @@ function addPostToDOM(post) {
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
 function generateMediaGrid(mediaItems) {
-    if (!mediaItems.length) return '';
+    if (!mediaItems?.length) return '';
     
-    let html = '';
-    
-    // Xử lý video riêng
-    mediaItems.forEach(media => {
+    return mediaItems.map(media => {
         if (media.type === 'video') {
-            html += `
+            return `
                 <div class="post-video-frame">
-                    <video controls>
+                    <video controls preload="metadata">
                         <source src="${media.url}" type="video/mp4">
                         <source src="${media.url}" type="video/webm">
+                        <source src="${media.url}" type="video/mkv">
                         Your browser does not support the video tag.
                     </video>
                 </div>
             `;
-        } else if (media.type === 'image') {
-            // Xử lý ảnh như bình thường
-            html += `<div class="image-container">
-                <img src="${media.url}" alt="Post image">
-            </div>`;
+        } else {
+            return `
+                <div class="image-container">
+                    <img src="${media.url}" alt="Post image">
+                </div>
+            `;
         }
-    });
-    
-    return html;
+    }).join('');
 }
     function getMediaGridClass(count) {
         if (count === 1) return 'single-image';
