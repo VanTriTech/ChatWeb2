@@ -418,7 +418,6 @@ function loadPosts() {
 }
 
 
-
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
     const input = event.target;
