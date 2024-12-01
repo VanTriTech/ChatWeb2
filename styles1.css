@@ -285,15 +285,8 @@ body {
 .post-media {
     display: grid;
     gap: 2px;
-    margin: 12px auto;
-    border-radius: 16px;
-    overflow: visible; /* Cho phép hiển thị tất cả ảnh */
-    background-color: #16181c;
-    width: fit-content;
-    grid-template-columns: repeat(2, 300px);
-    grid-auto-rows: 300px;
-    grid-auto-flow: row; /* Đảm bảo ảnh xếp theo hàng */
-    max-height: none; /* Bỏ giới hạn chiều cao */
+    border-radius: 12px;
+    overflow: hidden;
 }
 
 /* Single image */
@@ -1762,10 +1755,12 @@ body {
 }
 .video-container {
     width: 100%;
-    aspect-ratio: 16/9;
+    max-width: 100%;
+    position: relative;
     background: #000;
     border-radius: 12px;
     overflow: hidden;
+    aspect-ratio: 16/9;
 }
 
 
@@ -1775,9 +1770,14 @@ body {
     object-fit: contain;
 }
 
+
 .preview-item.video-preview {
+    width: 100%;
     aspect-ratio: 16/9;
     background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
 }
 
 
@@ -1786,6 +1786,7 @@ body {
     height: 100%;
     object-fit: contain;
 }
+
 .video-preview {
     width: 100%;
     max-width: 500px;
@@ -1811,4 +1812,19 @@ body {
     width: 100%;
     height: 100%;
     object-fit: contain;
+}
+.post-media.single-media {
+    grid-template-columns: 1fr;
+}
+
+.post-media.two-media {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.post-media.three-media {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.post-media.four-media {
+    grid-template-columns: repeat(2, 1fr);
 }
