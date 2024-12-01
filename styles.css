@@ -1832,3 +1832,20 @@ body {
     object-fit: contain; /* Đảm bảo video hiển thị đúng tỷ lệ */
     max-height: 80vh; /* Giới hạn chiều cao tối đa */
 }
+/* Tăng kích thước khung video */
+.post-video-frame {
+    width: 100%;
+    max-width: 1200px; /* Tăng từ 600px lên 1200px */
+    margin: 10px auto;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.post-video-frame video {
+    width: 100%;
+    height: auto;
+    display: block;
+    min-height: 400px; /* Thêm chiều cao tối thiểu */
+}
