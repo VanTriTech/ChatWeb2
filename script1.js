@@ -145,6 +145,11 @@
     }, 100);
 })();
 document.addEventListener('DOMContentLoaded', function() {
+    const twitterButton = document.querySelector('.twitter-video-btn');
+    if (twitterButton) {
+        twitterButton.addEventListener('click', showTwitterVideoInput);
+    }
+});
     // DOM Elements
     const postInput = document.getElementById('post-input');
     const postButton = document.getElementById('post-button');
@@ -1836,6 +1841,7 @@ window.processTwitterUrl = function() {
         return;
     }
 
+
     // Tạo video embed
     const videoEmbed = `<div class="twitter-video-embed">
         <iframe 
@@ -1858,13 +1864,26 @@ window.processTwitterUrl = function() {
 }
     // Tạo embed code
     const tweetId = extractTweetId(url);
-    const embedCode = `<blockquote class="twitter-tweet" data-conversation="none">
-        <a href="${url}"></a>
-    </blockquote>
-    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"><\/script>`;
+    const videoEmbed = `
+        <div class="twitter-video-container">
+            <blockquote class="twitter-tweet" data-conversation="none">
+                <a href="${url}"></a>
+            </blockquote>
+            <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"><\/script>
+        </div>
+    `;
+    // Hiển thị preview
+    mediaPreview.style.display = 'block';
+    mediaPreview.innerHTML += `
+        <div class="preview-item twitter-preview">
+            <div class="twitter-embed-preview">Video từ X.com</div>
+            <button class="remove-preview" onclick="removeTwitterEmbed()">×</button>
+        </div>
+    `;
 
-    // Thêm vào post content
+    // Thêm vào post content và preview
     const postInput = document.getElementById('post-input');
+    const mediaPreview = document.querySelector('.media-preview');
     postInput.value += `\n${url}\n`;
     
     // Lưu embed code để sử dụng khi tạo post
@@ -1876,7 +1895,23 @@ window.processTwitterUrl = function() {
     // Enable nút đăng bài
     document.getElementById('post-button').disabled = false;
 }
-
+// Thêm hàm xóa Twitter embed
+window.removeTwitterEmbed = function() {
+    window.currentTwitterEmbed = null;
+    const twitterPreview = document.querySelector('.twitter-preview');
+    if (twitterPreview) {
+        twitterPreview.remove();
+    }
+    
+    // Kiểm tra xem còn media nào không để ẩn preview container
+    const mediaPreview = document.querySelector('.media-preview');
+    if (!mediaPreview.children.length) {
+        mediaPreview.style.display = 'none';
+    }
+    
+    // Update trạng thái nút đăng
+    updatePostButton();
+}
 // Hàm kiểm tra URL Twitter hợp lệ
 function isValidTwitterUrl(url) {
     return url.match(/^https?:\/\/(twitter\.com|x\.com)\/[a-zA-Z0-9_]+\/status\/[0-9]+/i);
