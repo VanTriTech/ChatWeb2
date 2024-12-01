@@ -254,30 +254,25 @@ function updateMediaPreview() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-    async function createPost() {
-        const content = postInput.value.trim();
-        if (!content && selectedMedia.length === 0) return;
+async function createPost() {
+    const content = postInput.value.trim();
+    if (!content && selectedMedia.length === 0) return;
 
-        const postId = Date.now();
-        const post = {
-            id: postId,
-            content: content,
-            author: {
-                name: profileName,
-                username: profileUsername,
-                avatar: document.querySelector('.profile-avatar img').src
-            },
-            media: selectedMedia,
-            reactions: {
-                likes: 0,
-                hearts: 0,
-                angry: 0
-            },
-            userReactions: {}, // Lưu reaction của từng user
-            comments: [],
-            timestamp: new Date().toISOString()
-        };
-
+    const postId = Date.now();
+    const post = {
+        id: postId,
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: [], // Khởi tạo mảng media trống
+        likes: 0,
+        likes2: 0,
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
         // Add post to DOM
         addPostToDOM(post);
 
@@ -808,7 +803,7 @@ function addPostToDOM(post) {
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
 function generateMediaGrid(mediaItems) {
-    if (!mediaItems.length) return '';
+    if (!mediaItems || !mediaItems.length) return '';
 
     const gridClass = getMediaGridClass(mediaItems.length);
     let html = `<div class="post-media ${gridClass}">`;
@@ -817,11 +812,15 @@ function generateMediaGrid(mediaItems) {
         if (media.type === 'video') {
             html += `
                 <div class="video-container">
-                    <video src="${media.url}" controls playsinline></video>
+                    <video controls playsinline>
+                        <source src="${media.url}" type="video/mp4">
+                    </video>
                 </div>
             `;
         } else {
-            const imageUrls = mediaItems.filter(m => m.type === 'image').map(m => m.url);
+            const imageUrls = mediaItems
+                .filter(m => m.type === 'image')
+                .map(m => m.url);
             const imageData = encodeURIComponent(JSON.stringify(imageUrls));
             html += `
                 <div class="image-container" onclick="openImageModal('${media.url}', ${index}, '${imageData}')">
@@ -1773,12 +1772,13 @@ async function createPost() {
         timestamp: new Date().toISOString()
     };
     // Xử lý media
+    // Xử lý media trước khi đăng bài
     for (let media of selectedMedia) {
+        // Đảm bảo URL của video được lưu đúng cách
         if (media.type === 'video') {
             post.media.push({
                 type: 'video',
-                url: media.url,
-                thumbnail: media.url // Có thể thêm thumbnail cho video nếu cần
+                url: media.url // Lưu trực tiếp URL dạng base64
             });
         } else {
             post.media.push({
@@ -1788,22 +1788,18 @@ async function createPost() {
         }
     }
 
-    // Thêm post vào DOM và lưu
+    // Thêm bài đăng vào DOM và localStorage
     addPostToDOM(post);
     savePost(post);
-    
+
     // Reset form
     postInput.value = '';
     postInput.style.height = 'auto';
     selectedMedia = [];
-    mediaPreview.style.display = 'none';
     mediaPreview.innerHTML = '';
+    mediaPreview.style.display = 'none';
     mediaInput.value = '';
     updatePostButton();
-    // Cập nhật tab Media nếu cần
-    if (document.querySelector('#media-section.active')) {
-        updateMediaTab();
-    }
 }
     let mediaHTML = '';
     if (post.media && post.media.length > 0) {
