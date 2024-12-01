@@ -1713,42 +1713,29 @@ function restoreData(event) {
     reader.readAsText(file);
 }
 function addGitHubVideo() {
-    const videoUrl = prompt("Nhập GitHub raw URL của video:");
+    const videoUrl = prompt("Nhập URL của video:", "https://vantritech.github.io/ChatWeb2/video1.mp4");
     if (videoUrl && videoUrl.trim()) {
-        // Log để kiểm tra
-        console.log("Đang thử load video từ URL:", videoUrl);
-        
-        // Tạo video test
-        const testVideo = document.createElement('video');
-        testVideo.src = videoUrl;
-        
-        // Xử lý khi video load thành công
-        testVideo.onloadeddata = () => {
-            console.log("Video loaded successfully!");
-            selectedMedia = [{
-                type: 'video',
-                url: videoUrl
-            }];
-            
-            // Hiển thị preview
-            const mediaPreview = document.querySelector('.media-preview');
-            mediaPreview.innerHTML = `
-                <div class="preview-item video-preview">
-                    <video src="${videoUrl}" controls preload="metadata">
-                        Your browser does not support the video tag.
-                    </video>
-                    <button class="remove-preview" onclick="removeMedia(0)">×</button>
-                </div>
-            `;
-            mediaPreview.style.display = 'grid';
-            updatePostButton();
-        };
-        
-        // Xử lý lỗi chi tiết
-        testVideo.onerror = (e) => {
-            console.error("Lỗi load video:", testVideo.error);
-            console.error("Error event:", e);
-            alert(`Không thể load video. Lỗi: ${testVideo.error.message}`);
-        };
+        // Tạo video preview
+        const videoPreview = `
+            <div class="preview-item video-preview">
+                <video src="${videoUrl}" controls>
+                    Your browser does not support the video tag.
+                </video>
+                <button class="remove-preview" onclick="removeMedia(${selectedMedia.length})">×</button>
+            </div>
+        `;
+
+        // Hiển thị preview
+        const mediaPreview = document.querySelector('.media-preview');
+        mediaPreview.innerHTML = videoPreview;
+        mediaPreview.style.display = 'grid';
+
+        // Lưu thông tin video
+        selectedMedia = [{
+            type: 'video',
+            url: videoUrl
+        }];
+
+        updatePostButton();
     }
 }
