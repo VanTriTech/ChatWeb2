@@ -265,9 +265,16 @@ async function createPost() {
             return;
         }
 
+        // Hiển thị loading
+        const loadingMessage = document.createElement('div');
+        loadingMessage.className = 'loading-message';
+        loadingMessage.innerHTML = 'Đang xử lý...';
+        document.body.appendChild(loadingMessage);
+
         // Xử lý media trước
         const processedMedia = [];
         for (const media of selectedMedia) {
+            console.log('Đang xử lý media:', media.fileName);
             processedMedia.push({
                 type: media.type,
                 url: media.url,
@@ -295,6 +302,8 @@ async function createPost() {
             timestamp: new Date().toISOString()
         };
 
+        console.log('Đang tạo bài đăng:', post);
+
         // Thêm post vào DOM và lưu
         addPostToDOM(post);
         
@@ -310,10 +319,16 @@ async function createPost() {
         updateMediaTab();
 
         console.log('Đăng bài thành công:', post);
+        
+        // Xóa loading và hiển thị thông báo thành công
+        loadingMessage.remove();
+        alert('Đăng bài thành công!');
 
     } catch (error) {
         console.error('Chi tiết lỗi:', error);
         alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại.');
+        // Xóa loading nếu có lỗi
+        document.querySelector('.loading-message')?.remove();
     }
 }
 
