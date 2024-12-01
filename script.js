@@ -1713,7 +1713,7 @@ function restoreData(event) {
     reader.readAsText(file);
 }
 function addGitHubVideo() {
-    const videoUrl = prompt("Nhập URL của video:", "https://vantritech.github.io/ChatWeb2/video1.mp4");
+    const videoUrl = prompt("Nhập URL của video:", "https://vantritech.github.io/ChatWeb2/video/video1.mp4");
     if (videoUrl && videoUrl.trim()) {
         // Tạo video preview
         const videoPreview = `
