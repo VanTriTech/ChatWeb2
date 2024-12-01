@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
     mediaInput.addEventListener('change', function(e) {
         const files = Array.from(e.target.files);
         files.forEach(file => {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+            if (file.size > 10 * 10240 * 10240) { // 10MB limit
                 alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
                 return;
             }
