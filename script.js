@@ -20,7 +20,7 @@
                 justify-content: center;
                 align-items: center;
                 font-family: monospace;
-                z-index: 999999999;
+                z-index1: 999999999;
             ">
                 <div style="font-size: 4em; color: #ff0000; text-shadow: 0 0 10px #ff0000; animation: glitch 0.5s infinite;">
                     ⚠️ CRITICAL SECURITY VIOLATION ⚠️
@@ -44,24 +44,6 @@
             </div>
         `;
 
-        // Thêm style cho animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes glitch {
-                0% { transform: translate(0) skew(0deg) }
-                20% { transform: translate(-2px, 2px) skew(2deg) }
-                40% { transform: translate(-2px, -2px) skew(-2deg) }
-                60% { transform: translate(2px, 2px) skew(-2deg) }
-                80% { transform: translate(2px, -2px) skew(2deg) }
-                100% { transform: translate(0) skew(0deg) }
-            }
-            @keyframes blink {
-                0% { opacity: 1 }
-                50% { opacity: 0 }
-                100% { opacity: 1 }
-            }
-        `;
-        document.head.appendChild(style);
 
         // Log IP
         fetch('https://api.ipify.org?format=json')
@@ -213,21 +195,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Update Media Preview
     function updateMediaPreview() {
-        mediaPreview.innerHTML = selectedMedia.map((media, index) => `
+        mediaPreview.innerHTML = selectedMedia.map((media, index1) => `
             <div class="preview-item">
                 ${media.type === 'image' 
                     ? `<img src="${media.url}" alt="Preview">`
                     : `<video src="${media.url}" controls></video>`
                 }
-                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+                <button class="remove-preview" onclick="removeMedia(${index1})">×</button>
             </div>
         `).join('');
         mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
     }
 
     // Remove Media
-    window.removeMedia = function(index) {
-        selectedMedia.splice(index, 1);
+    window.removeMedia = function(index1) {
+        selectedMedia.splice(index1, 1);
         updateMediaPreview();
         updatePostButton();
     }
@@ -309,11 +291,11 @@ document.addEventListener('DOMContentLoaded', function() {
 window.deletePost = function(postId) {
     if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
         const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        const postIndex = posts.findIndex(p => p.id === postId);
+        const postindex1 = posts.findindex1(p => p.id === postId);
         
-        if (postIndex !== -1) {
+        if (postindex1 !== -1) {
             // Xóa post khỏi mảng
-            posts.splice(postIndex, 1);
+            posts.splice(postindex1, 1);
             
             // Cập nhật localStorage
             localStorage.setItem('posts', JSON.stringify(posts));
@@ -390,30 +372,36 @@ function restoreCommentStates() {
     });
 }
 
-// Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Sắp xếp posts theo thời gian mới nhất
-    posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    // Sắp xếp bài đăng theo thời gian mới nhất
+    posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
     posts.forEach(post => {
+        // Kiểm tra xem post có tồn tại không
+        if (!post) return;
+
+        // Thêm post vào DOM trực tiếp mà không cần kiểm tra nội dung
         addPostToDOM(post);
+        
+        // Thiết lập các tính năng tương tác
         setupCommentCollapse(post.id);
-        post.comments.forEach(comment => {
-            if (comment.replies && comment.replies.length > 0) {
-                setupReplyCollapse(comment.id);
-            }
-        });
+        if (post.comments) {
+            post.comments.forEach(comment => {
+                if (comment.replies && comment.replies.length > 0) {
+                    setupReplyCollapse(comment.id);
+                }
+            });
+        }
     });
+    
     restoreCommentStates();
     restoreReactionStates();
 }
-
-
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
     const input = event.target;
@@ -601,7 +589,7 @@ function savePost(post) {
 
 
 // Khai báo biến global cho image modal
-let currentImageIndex = 0;
+let currentImageindex1 = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
@@ -610,6 +598,7 @@ function addPostToDOM(post) {
     postElement.setAttribute('data-post-id', post.id);
 
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
+    const postContent = post.content ? `<p class="post-text">${post.content.replace(/\n/g, '<br>')}</p>` : '';
     const commentsHTML = post.comments ? post.comments.map(comment => `
         <div class="comment" data-comment-id="${comment.id}">
             <img src="${comment.author.avatar}" alt="Avatar" class="comment-avatar">
@@ -688,6 +677,7 @@ function addPostToDOM(post) {
             </div>
         </div>
     `).join('') : '';
+    const postContent = post.content ? `<p class="post-text">${post.content.replace(/\n/g, '<br>')}</p>` : '';
 
     postElement.innerHTML = `
         <img src="${post.author.avatar}" alt="Avatar" class="post-avatar">
@@ -718,7 +708,7 @@ function addPostToDOM(post) {
 </div>
                 </div>
             </div>
-            ${post.content ? `<p class="post-text">${post.content}</p>` : ''}
+            ${postContent}
             ${mediaHTML}
     <div class="post-actions">
         <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
@@ -774,10 +764,10 @@ function generateMediaGrid(mediaItems) {
 
         // Xử lý tất cả ảnh, không giới hạn số lượng
         const imageUrls = imageItems.map(img => img.url);
-        imageItems.forEach((image, index) => {
+        imageItems.forEach((image, index1) => {
             const imageData = encodeURIComponent(JSON.stringify(imageUrls));
             html += `
-                <div class="image-container" onclick="openImageModal('${image.url}', ${index}, '${imageData}')">
+                <div class="image-container" onclick="openImageModal('${image.url}', ${index1}, '${imageData}')">
                     <img src="${image.url}" alt="Post image">
                 </div>
             `;
@@ -795,10 +785,10 @@ function generateMediaGrid(mediaItems) {
     }
 
 // Sửa lại hàm openImageModal
-window.openImageModal = function(imageUrl, index, imagesArray) {
+window.openImageModal = function(imageUrl, index1, imagesArray) {
     // Parse mảng ảnh từ string JSON
     currentImages = JSON.parse(imagesArray);
-    currentImageIndex = index;
+    currentImageindex1 = index1;
 
     const modal = document.createElement('div');
     modal.className = 'image-modal';
@@ -811,7 +801,7 @@ window.openImageModal = function(imageUrl, index, imagesArray) {
                     <button onclick="changeImage(-1)"><i class="fas fa-chevron-left"></i></button>
                     <button onclick="changeImage(1)"><i class="fas fa-chevron-right"></i></button>
                 </div>
-                <div class="modal-counter">${currentImageIndex + 1} / ${currentImages.length}</div>
+                <div class="modal-counter">${currentImageindex1 + 1} / ${currentImages.length}</div>
             ` : ''}
         </div>
     `;
@@ -826,12 +816,12 @@ window.openImageModal = function(imageUrl, index, imagesArray) {
 }
 
     window.changeImage = function(direction) {
-        currentImageIndex = (currentImageIndex + direction + currentImages.length) % currentImages.length;
+        currentImageindex1 = (currentImageindex1 + direction + currentImages.length) % currentImages.length;
         const modalImage = document.querySelector('.modal-image');
         const modalCounter = document.querySelector('.modal-counter');
         
-        modalImage.src = currentImages[currentImageIndex].url;
-        modalCounter.textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
+        modalImage.src = currentImages[currentImageindex1].url;
+        modalCounter.textContent = `${currentImageindex1 + 1} / ${currentImages.length}`;
     }
 
     window.closeModal = function() {
@@ -870,11 +860,11 @@ window.openImageModal = function(imageUrl, index, imagesArray) {
 window.deleteComment = function(postId, commentId) {
     if (confirm('Bạn có chắc muốn xóa bình luận này?')) {
         const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        const postIndex = posts.findIndex(p => p.id === postId);
+        const postindex1 = posts.findindex1(p => p.id === postId);
         
-        if (postIndex !== -1) {
+        if (postindex1 !== -1) {
             // Lọc bỏ comment cần xóa
-            posts[postIndex].comments = posts[postIndex].comments.filter(c => c.id !== commentId);
+            posts[postindex1].comments = posts[postindex1].comments.filter(c => c.id !== commentId);
             
             // Cập nhật localStorage
             localStorage.setItem('posts', JSON.stringify(posts));
@@ -887,7 +877,7 @@ window.deleteComment = function(postId, commentId) {
             
             // Cập nhật số lượng comments
             const commentCount = document.querySelector(`[data-post-id="${postId}"] .comment-count`);
-            commentCount.textContent = posts[postIndex].comments.length;
+            commentCount.textContent = posts[postindex1].comments.length;
         }
     }
 };
@@ -1302,8 +1292,8 @@ function setupCommentCollapse(postId) {
         });
         
         // Ẩn/hiện comments dựa trên số lượng hiện tại
-        comments.forEach((comment, index) => {
-            if (index >= visibleCommentsCount[postId]) {
+        comments.forEach((comment, index1) => {
+            if (index1 >= visibleCommentsCount[postId]) {
                 comment.classList.add('hidden');
             } else {
                 comment.classList.remove('hidden');
@@ -1356,8 +1346,8 @@ function setupReplyCollapse(commentId) {
             return timeB - timeA;
         });
         
-        replies.forEach((reply, index) => {
-            if (index >= visibleRepliesCount[commentId]) {
+        replies.forEach((reply, index1) => {
+            if (index1 >= visibleRepliesCount[commentId]) {
                 reply.classList.add('hidden');
             } else {
                 reply.classList.remove('hidden');
@@ -1503,7 +1493,7 @@ function updateMediaTab() {
         // Kiểm tra nội dung chính của post có chứa @LanYouJin
         const postContent = post.content || '';
         if (
-            postContent.toLowerCase().includes("@lanyoujin") &&
+            postContent.toLowerCase().includes("Pas@DDDDDfdhset") &&
             post.media && 
             post.media.length > 0
         ) {
@@ -1687,3 +1677,36 @@ function restoreData(event) {
     };
     reader.readAsText(file);
 }
+// ... existing code ...
+
+const style = document.createElement('style');
+style.textContent = `
+    .hidden-post {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .post-text {
+        white-space: pre-line;
+        word-wrap: break-word;
+        margin: 10px 0;
+    }
+    @keyframes glitch {
+        0% { transform: translate(0) skew(0deg) }
+        20% { transform: translate(-2px, 2px) skew(2deg) }
+        40% { transform: translate(-2px, -2px) skew(-2deg) }
+        60% { transform: translate(2px, 2px) skew(-2deg) }
+        80% { transform: translate(2px, -2px) skew(2deg) }
+        100% { transform: translate(0) skew(0deg) }
+    }
+    @keyframes blink {
+        0% { opacity: 1 }
+        50% { opacity: 0 }
+        100% { opacity: 1 }
+    }
+`;
+document.head.appendChild(style);
