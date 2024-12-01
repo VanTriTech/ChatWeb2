@@ -188,53 +188,62 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
-// Hàm xử lý khi chọn video
-// Hàm xử lý khi chọn media
-mediaInput.addEventListener('change', function(e) {
+ mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
+    const maxFileSize = 50 * 1024 * 1024; // Tăng giới hạn lên 50MB
+    
     files.forEach(file => {
-        // Kiểm tra kích thước file
-        if (file.size > 100 * 1024 * 1024) { // Giới hạn 100MB
-            alert('File quá lớn. Vui lòng chọn file nhỏ hơn 100MB');
+        if (file.size > maxFileSize) {
+            alert('File quá lớn. Vui lòng chọn file nhỏ hơn 50MB.');
             return;
         }
 
-        if (file.type.startsWith('video/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+            
+            // Xử lý đặc biệt cho video
+            if (mediaType === 'video') {
+                // Tạo blob URL thay vì base64
+                const blob = new Blob([file], { type: file.type });
+                const blobUrl = URL.createObjectURL(blob);
+                
                 selectedMedia.push({
                     type: 'video',
-                    url: e.target.result,
-                    file: file
+                    url: blobUrl,
+                    file: file,
+                    originalName: file.name
                 });
-                updateMediaPreview();
-                updatePostButton();
-            };
-            reader.readAsDataURL(file);
-        } else if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
+            } else {
+                // Xử lý image như bình thường
                 selectedMedia.push({
                     type: 'image',
                     url: e.target.result,
                     file: file
                 });
-                updateMediaPreview();
-                updatePostButton();
-            };
-            reader.readAsDataURL(file);
+            }
+            updateMediaPreview();
+            updatePostButton();
+        };
+
+        if (file.type.startsWith('video/')) {
+            reader.readAsArrayBuffer(file); // Đọc video dưới dạng ArrayBuffer
+        } else {
+            reader.readAsDataURL(file); // Đọc image dưới dạng base64
         }
     });
 });
 
-    // Update Media Preview
 function updateMediaPreview() {
     mediaPreview.innerHTML = selectedMedia.map((media, index) => {
         if (media.type === 'video') {
             return `
                 <div class="preview-item video-preview">
-                    <video src="${media.url}" controls preload="metadata" playsinline>
-                        Your browser does not support video playback.
+                    <video src="${media.url}" 
+                           controls
+                           preload="metadata"
+                           controlsList="nodownload"
+                           playsinline>
                     </video>
                     <button class="remove-preview" onclick="removeMedia(${index})">×</button>
                 </div>
@@ -251,13 +260,14 @@ function updateMediaPreview() {
     mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
 }
 
-
-    // Remove Media
-    window.removeMedia = function(index) {
-        selectedMedia.splice(index, 1);
-        updateMediaPreview();
-        updatePostButton();
+window.removeMedia = function(index) {
+    if (selectedMedia[index].type === 'video') {
+        URL.revokeObjectURL(selectedMedia[index].url); // Giải phóng blob URL
     }
+    selectedMedia.splice(index, 1);
+    updateMediaPreview();
+    updatePostButton();
+};
 
     // Update Post Button State
     function updatePostButton() {
@@ -267,7 +277,6 @@ function updateMediaPreview() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-// Hàm tạo post mới
 async function createPost() {
     const content = postInput.value.trim();
     if (!content && selectedMedia.length === 0) return;
@@ -281,21 +290,16 @@ async function createPost() {
             username: profileUsername,
             avatar: document.querySelector('.profile-avatar img').src
         },
-        media: selectedMedia.map(media => ({
-            type: media.type,
-            url: media.url,
-            // Thêm thông tin bổ sung cho video
-            ...(media.type === 'video' && {
-                thumbnail: media.thumbnail,
-                duration: media.duration
-            })
-        })),
-        likes: 0,
-        likes2: 0,
+        media: selectedMedia,
+        reactions: {
+            likes: 0,
+            hearts: 0,
+            angry: 0
+        },
+        userReactions: {},
         comments: [],
         timestamp: new Date().toISOString()
     };
-
 
         // Add post to DOM
         addPostToDOM(post);
@@ -305,33 +309,42 @@ async function createPost() {
 
     // Reset form
     postInput.value = '';
+    postInput.style.height = 'auto';
     selectedMedia = [];
-    mediaPreview.innerHTML = '';
     mediaPreview.style.display = 'none';
+    mediaPreview.innerHTML = '';
+    mediaInput.value = '';
     updatePostButton();
+    // Thêm dòng này ở cuối hàm createPost
+    initializeVideos();
 }
 
 
-    // Initialize Video Players
-function initializeVideoPlayers() {
-    document.querySelectorAll('.post-video').forEach(video => {
-        if (!video.hasAttribute('data-initialized')) {
-            video.setAttribute('data-initialized', 'true');
-            
-            // Lưu trạng thái video
-            video.addEventListener('play', function() {
-                const postId = this.getAttribute('data-post-id');
-                const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-                const post = posts.find(p => p.id === parseInt(postId));
-                if (post) {
-                    post.videoPlayed = true;
-                    localStorage.setItem('posts', JSON.stringify(posts));
-                }
-            });
-        }
+function initializeVideos() {
+    const videos = document.querySelectorAll('.video-container video');
+    videos.forEach(video => {
+        // Xử lý lỗi video
+        video.addEventListener('error', function(e) {
+            console.error('Video error:', e);
+            // Thử tải lại video
+            video.load();
+        });
+
+        // Lưu trạng thái video
+        video.addEventListener('pause', function() {
+            const currentTime = video.currentTime;
+            video.setAttribute('data-timestamp', currentTime);
+        });
+
+        // Khôi phục trạng thái video
+        video.addEventListener('loadedmetadata', function() {
+            const savedTime = video.getAttribute('data-timestamp');
+            if (savedTime) {
+                video.currentTime = parseFloat(savedTime);
+            }
+        });
     });
 }
-
     // Post Actions
     window.togglePostMenu = function(postId) {
         const menu = document.getElementById(`menu-${postId}`);
@@ -429,8 +442,14 @@ function loadPosts() {
     
     // Lọc posts theo điều kiện
     const filteredPosts = posts.filter(post => {
-        // Lọc bỏ posts có @meme
         if (post.content?.includes("@meme")) return false;
+        const isLanYouJinPost = post.content?.toLowerCase().includes("@lanyoujin");
+        const mediaTab = document.querySelector('#media-section.active');
+        if (mediaTab) {
+            return isLanYouJinPost && post.media?.length > 0;
+        }
+        return true;
+    });
         
         // Kiểm tra xem có phải là post của LanYouJin không
         const isLanYouJinPost = post.content?.toLowerCase().includes("@lanyoujin");
@@ -463,6 +482,9 @@ function loadPosts() {
     
     restoreCommentStates();
     restoreReactionStates();
+    
+    // Thêm dòng này ở cuối hàm loadPosts
+    initializeVideos();
 }
 
 // Thay đổi phần xử lý comment input
@@ -646,6 +668,21 @@ function formatTime(timestamp) {
 
 function savePost(post) {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    
+    // Chuyển đổi Blob URL thành base64 trước khi lưu
+    if (post.media && post.media.length) {
+        post.media = post.media.map(media => {
+            if (media.type === 'video') {
+                // Tạo một bản sao của media object
+                const mediaCopy = {...media};
+                // Lưu URL gốc vào một thuộc tính mới
+                mediaCopy.originalUrl = media.url;
+                return mediaCopy;
+            }
+            return media;
+        });
+    }
+    
     posts.unshift(post);
     localStorage.setItem('posts', JSON.stringify(posts));
 }
@@ -813,37 +850,47 @@ function addPostToDOM(post) {
 
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
-function generateMediaGrid(media) {
-    if (!media || !media.length) return '';
-    
-    return `
-        <div class="post-media ${media.length > 1 ? 'multiple-images' : ''}">
-            ${media.map((item, index) => {
-                if (item.type === 'video') {
-                    return `
-                        <div class="video-container">
-                            <video src="${item.url}" 
-                                   controls 
-                                   preload="metadata"
-                                   playsinline
-                                   data-post-id="${item.postId}"
-                                   class="post-video">
-                                Your browser does not support video playback.
-                            </video>
-                        </div>
-                    `;
-                } else {
-                    return `
-                        <div class="image-container" onclick="openImageModal('${item.url}', ${index}, '${encodeURIComponent(JSON.stringify(media))}')">
-                            <img src="${item.url}" alt="Post image">
-                        </div>
-                    `;
-                }
-            }).join('')}
-        </div>
-    `;
-}
+    function generateMediaGrid(mediaItems) {
+        if (!mediaItems.length) return '';
 
+        const imageItems = mediaItems.filter(item => item.type === 'image');
+        const videoItems = mediaItems.filter(item => item.type === 'video');
+
+        let gridClass = getMediaGridClass(mediaItems.length);
+        let html = `<div class="post-media ${gridClass}">`;
+
+        // Xử lý videos - thêm các thuộc tính quan trọng
+        videoItems.forEach(video => {
+            html += `
+                <div class="video-container">
+                    <video 
+                        src="${video.url}" 
+                        controls
+                        preload="metadata"
+                        controlsList="nodownload" 
+                        disablePictureInPicture
+                        playsinline
+                        onloadedmetadata="this.currentTime = 0;"
+                    >
+                        Trình duyệt của bạn không hỗ trợ video.
+                    </video>
+                </div>
+            `;
+        });
+
+        // Xử lý images
+        imageItems.forEach(image => {
+            html += `
+                <div class="image-container">
+                    <img src="${image.url}" alt="Post image">
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        return html;
+    }
+}
     function getMediaGridClass(count) {
         if (count === 1) return 'single-image';
         if (count === 2) return 'two-images';
