@@ -148,9 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // DOM Elements
     const postInput = document.getElementById('post-input');
     const postButton = document.getElementById('post-button');
-    if (postButton) {
-        postButton.addEventListener('click', createPost);
-    }
     const mediaInput = document.getElementById('media-input');
     const postsContainer = document.getElementById('posts-container');
     const mediaPreview = document.querySelector('.media-preview');
@@ -243,41 +240,45 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-async function createPost() {
-    const content = postInput.value.trim();
-    if (!content && selectedMedia.length === 0 && !window.currentTwitterEmbed) return;
+    async function createPost() {
+        const content = postInput.value.trim();
+        if (!content && selectedMedia.length === 0) return;
 
-    const postId = Date.now();
-    const post = {
-        id: postId,
-        content: content,
-        author: {
-            name: profileName,
-            username: profileUsername,
-            avatar: document.querySelector('.profile-avatar img').src
-        },
-        media: selectedMedia,
-        twitterEmbed: window.currentTwitterEmbed,
-        likes: 0,
-        likes2: 0,
-        comments: [],
-        timestamp: new Date().toISOString()
-    };
+        const postId = Date.now();
+        const post = {
+            id: postId,
+            content: content,
+            author: {
+                name: profileName,
+                username: profileUsername,
+                avatar: document.querySelector('.profile-avatar img').src
+            },
+            media: selectedMedia,
+            reactions: {
+                likes: 0,
+                hearts: 0,
+                angry: 0
+            },
+            userReactions: {}, // Lưu reaction của từng user
+            comments: [],
+            timestamp: new Date().toISOString()
+        };
 
-    // Thêm post vào DOM và lưu
-    addPostToDOM(post);
-    savePost(post);
+        // Add post to DOM
+        addPostToDOM(post);
 
-    // Reset form
-    postInput.value = '';
-    postInput.style.height = 'auto';
-    selectedMedia = [];
-    mediaPreview.style.display = 'none';
-    mediaPreview.innerHTML = '';
-    mediaInput.value = '';
-    window.currentTwitterEmbed = null;
-    updatePostButton();
-}
+        // Save to localStorage
+        savePost(post);
+
+        // Reset form
+        postInput.value = '';
+        postInput.style.height = 'auto';
+        selectedMedia = [];
+        mediaPreview.style.display = 'none';
+        mediaPreview.innerHTML = '';
+        mediaInput.value = '';
+        updatePostButton();
+    }
 
 
     // Initialize Video Players
@@ -615,11 +616,6 @@ function savePost(post) {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     posts.unshift(post); // Thêm post mới vào đầu mảng
     localStorage.setItem('posts', JSON.stringify(posts));
-    
-    // Cập nhật lại tab Media nếu cần
-    if (post.media && post.media.length > 0) {
-        updateMediaTab();
-    }
 }
 
 
@@ -628,20 +624,26 @@ let currentImageIndex = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
-    // Kiểm tra nếu nội dung có chứa "@meme"
+    // Kiểm tra nếu nội dung có chứa chính xác "@meme"
     if (post.content && post.content.includes("@meme")) {
         return;
     }
-
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
     // Xử lý nội dung để giữ nguyên xuống dòng
-    // Xử lý nội dung để giữ nguyên xuống dòng
     const formattedContent = post.content ? post.content.replace(/\n/g, '<br>') : '';
-    
-    // Xử lý media
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
+        // Thêm phần xử lý Twitter embed
+    const twitterHTML = post.twitterEmbed ? `
+        <div class="twitter-embed">
+            <blockquote class="twitter-tweet" data-conversation="none">
+                <a href="${post.twitterEmbed.url}"></a>
+            </blockquote>
+            <script async src="https://platform.twitter.com/widgets.js"></script>
+        </div>
+    ` : '';
+
     const commentsHTML = post.comments ? post.comments.map(comment => `
         <div class="comment" data-comment-id="${comment.id}">
             <img src="${comment.author.avatar}" alt="Avatar" class="comment-avatar">
@@ -735,50 +737,58 @@ function addPostToDOM(post) {
                         <i class="fas fa-ellipsis-h"></i>
                     </button>
                     <div class="post-menu-dropdown" id="menu-${post.id}">
-                        <div class="post-menu-item edit" onclick="editPost(${post.id})">
-                            <i class="fas fa-edit"></i>
-                            Chỉnh sửa
-                        </div>
-                        <div class="post-menu-item delete" onclick="deletePost(${post.id})">
-                            <i class="fas fa-trash"></i>
-                            Xóa
-                        </div>
-                    </div>
+    <div class="post-menu-item edit" onclick="editPost(${post.id})">
+        <i class="fas fa-edit"></i>
+        Chỉnh sửa
+    </div>
+    <div class="post-menu-item edit-reactions" onclick="editPostReactions(${post.id})">
+        <i class="fas fa-heart"></i>
+        Sửa reactions
+    </div>
+    <div class="post-menu-item delete" onclick="deletePost(${post.id})">
+        <i class="fas fa-trash"></i>
+        Xóa
+    </div>
+</div>
+
                 </div>
             </div>
-            ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
-            ${mediaHTML}
-            ${twitterEmbedHTML}
-            <div class="post-actions">
-                <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
-                    <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
-                    <span class="like-count">${post.likes || 0}</span>
-                </button>
-                <button class="action-button like2-button ${post.userLiked2 ? 'liked' : ''}" onclick="toggleLike2(${post.id})">
-                    <i class="${post.userLiked2 ? 'fas' : 'far'} fa-thumbs-up"></i>
-                    <span class="like2-count">${post.likes2 || 0}</span>
-                </button>
-                <button class="action-button" onclick="toggleComments(${post.id})">
-                    <i class="far fa-comment"></i>
-                    <span class="comment-count">${post.comments ? post.comments.length : 0}</span>
-                </button>
+            <div class="post-text-container">
+                ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
             </div>
+            ${mediaHTML}
+            ${twitterHTML}
+            <div class="post-actions">
+        <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+            <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
+            <span class="like-count">${post.likes || 0}</span>
+        </button>
+        <button class="action-button like2-button ${post.userLiked2 ? 'liked' : ''}" onclick="toggleLike2(${post.id})">
+            <i class="${post.userLiked2 ? 'fas' : 'far'} fa-thumbs-up"></i>
+            <span class="like2-count">${post.likes2 || 0}</span>
+        </button>
+            <button class="action-button" onclick="toggleComments(${post.id})">
+                <i class="far fa-comment"></i>
+                <span class="comment-count">${post.comments ? post.comments.length : 0}</span>
+            </button>
+        </div>
             <div class="comments-section" id="comments-${post.id}">
                 <div class="comment-form">
-                    <textarea class="comment-input" 
-                              placeholder="Viết bình luận..." 
-                              onkeydown="handleComment(event, ${post.id})"
-                              oninput="autoResizeTextarea(this)"></textarea>
+            <textarea class="comment-input" 
+                      placeholder="Viết bình luận..." 
+                      onkeydown="handleComment(event, ${post.id})"
+                      oninput="autoResizeTextarea(this)"></textarea>
                 </div>
                 <div class="comment-list">
-                    ${generateCommentsHTML(post.comments || [])}
+                    ${commentsHTML}
                 </div>
             </div>
         </div>
     `;
 
     postsContainer.insertBefore(postElement, postsContainer.firstChild);
-    u
+    updateMediaTab();
+}
 
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
@@ -1714,4 +1724,56 @@ function restoreData(event) {
         }
     };
     reader.readAsText(file);
+}
+// Thêm hàm xử lý Twitter embed
+function handleTwitterEmbed(url) {
+    if (!url.includes('x.com') && !url.includes('twitter.com')) {
+        return null;
+    }
+    
+    // Lấy ID của tweet từ URL
+    const tweetId = url.split('/').pop().split('?')[0];
+    if (!tweetId) return null;
+
+    return {
+        id: tweetId,
+        url: url
+    };
+}
+
+// Cập nhật hàm createPost
+async function createPost() {
+    const content = postInput.value.trim();
+    
+    // Kiểm tra nếu có URL Twitter trong nội dung
+    const twitterEmbed = handleTwitterEmbed(content);
+    
+    if (!content && selectedMedia.length === 0 && !twitterEmbed) return;
+
+    const postId = Date.now();
+    const post = {
+        id: postId,
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: selectedMedia,
+        twitterEmbed: twitterEmbed,
+        likes: 0,
+        likes2: 0,
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
+
+    // Thêm post vào DOM và lưu
+    addPostToDOM(post);
+    savePost(post);
+    
+    // Reset form
+    postInput.value = '';
+    selectedMedia = [];
+    mediaPreview.style.display = 'none';
+    mediaPreview.innerHTML = '';
 }
