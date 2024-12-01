@@ -397,8 +397,8 @@ function loadPosts() {
     
     // Lọc posts theo điều kiện
     const filteredPosts = posts.filter(post => {
-        // Lọc bỏ posts có @meme
-        if (post.content?.includes("@meme")) return false;
+        // Lọc bỏ posts có @18+
+        if (post.content?.includes("@18+")) return false;
         
         // Kiểm tra xem có phải là post của LanYouJin không
         const isLanYouJinPost = post.content?.toLowerCase().includes("@lanyoujin");
@@ -409,7 +409,7 @@ function loadPosts() {
             return isLanYouJinPost && post.media?.length > 0;
         }
         
-        return true; // Hiển thị tất cả posts không có @meme ở tab Timeline
+        return true; // Hiển thị tất cả posts không có @18+ ở tab Timeline
     });
     
     // Xáo trộn mảng posts bằng thuật toán Fisher-Yates
@@ -634,6 +634,17 @@ function addPostToDOM(post) {
     // Xử lý nội dung để giữ nguyên xuống dòng
     const formattedContent = post.content ? post.content.replace(/\n/g, '<br>') : '';
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
+
+    // Thêm phần xử lý Twitter embed
+    const twitterHTML = post.twitterEmbed ? `
+        <div class="twitter-embed">
+            <blockquote class="twitter-tweet" data-conversation="none">
+                <a href="${post.twitterEmbed.url}"></a>
+            </blockquote>
+            <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+        </div>
+    ` : '';
+
     const commentsHTML = post.comments ? post.comments.map(comment => `
         <div class="comment" data-comment-id="${comment.id}">
             <img src="${comment.author.avatar}" alt="Avatar" class="comment-avatar">
@@ -747,6 +758,7 @@ function addPostToDOM(post) {
                 ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
             </div>
             ${mediaHTML}
+            ${twitterHTML}
             <div class="post-actions">
         <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
             <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
@@ -1713,4 +1725,56 @@ function restoreData(event) {
         }
     };
     reader.readAsText(file);
+}
+// Thêm hàm xử lý Twitter embed
+function handleTwitterEmbed(url) {
+    if (!url.includes('x.com') && !url.includes('twitter.com')) {
+        return null;
+    }
+    
+    // Lấy ID của tweet từ URL
+    const tweetId = url.split('/').pop().split('?')[0];
+    if (!tweetId) return null;
+
+    return {
+        id: tweetId,
+        url: url
+    };
+}
+
+// Cập nhật hàm createPost
+async function createPost() {
+    const content = postInput.value.trim();
+    
+    // Kiểm tra nếu có URL Twitter trong nội dung
+    const twitterEmbed = handleTwitterEmbed(content);
+    
+    if (!content && selectedMedia.length === 0 && !twitterEmbed) return;
+
+    const postId = Date.now();
+    const post = {
+        id: postId,
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: selectedMedia,
+        twitterEmbed: twitterEmbed,
+        likes: 0,
+        likes2: 0,
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
+
+    // Thêm post vào DOM và lưu
+    addPostToDOM(post);
+    savePost(post);
+    
+    // Reset form
+    postInput.value = '';
+    selectedMedia = [];
+    mediaPreview.style.display = 'none';
+    mediaPreview.innerHTML = '';
 }
