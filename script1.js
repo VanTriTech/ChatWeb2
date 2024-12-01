@@ -238,49 +238,63 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Create New Post
-    postButton.addEventListener('click', createPost);
+postButton.addEventListener('click', createPost);
 
-    async function createPost() {
-        const content = postInput.value.trim();
-        if (!content && selectedMedia.length === 0) return;
+async function createPost() {
+    const content = postInput.value.trim();
+    if (!content && selectedMedia.length === 0) return;
 
-        const postId = Date.now();
-        const post = {
-            id: postId,
-            content: content,
-            author: {
-                name: profileName,
-                username: profileUsername,
-                avatar: document.querySelector('.profile-avatar img').src
-            },
-            media: selectedMedia,
-            reactions: {
-                likes: 0,
-                hearts: 0,
-                angry: 0
-            },
-            userReactions: {}, // Lưu reaction của từng user
-            comments: [],
-            timestamp: new Date().toISOString()
-        };
-
-        // Add post to DOM
-        addPostToDOM(post);
-
-        // Save to localStorage
-        savePost(post);
-
-        // Reset form
-        postInput.value = '';
-        postInput.style.height = 'auto';
-        selectedMedia = [];
-        mediaPreview.style.display = 'none';
-        mediaPreview.innerHTML = '';
-        mediaInput.value = '';
-        updatePostButton();
+    // Xử lý media trước khi tạo post
+    const processedMedia = [];
+    for (const media of selectedMedia) {
+        if (media.type === 'video') {
+            // Với video, lưu trực tiếp URL
+            processedMedia.push({
+                type: 'video',
+                url: media.url
+            });
+        } else {
+            // Với ảnh, giữ nguyên như cũ
+            processedMedia.push(media);
+        }
     }
 
+    const post = {
+        id: Date.now(),
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: processedMedia,
+        reactions: {
+            likes: 0,
+            hearts: 0,
+            angry: 0
+        },
+        userReactions: {},
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
 
+    // Thêm post vào DOM và lưu
+    addPostToDOM(post);
+    savePost(post);
+    
+    // Reset form
+    resetPostForm();
+}
+// Thêm hàm reset form mới này
+function resetPostForm() {
+    postInput.value = '';
+    postInput.style.height = 'auto';
+    selectedMedia = [];
+    mediaPreview.style.display = 'none';
+    mediaPreview.innerHTML = '';
+    mediaInput.value = '';
+    updatePostButton();
+}
     // Initialize Video Players
     function initializeVideoPlayers() {
         const videos = document.querySelectorAll('.video-player');
