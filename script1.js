@@ -191,18 +191,18 @@ document.addEventListener('DOMContentLoaded', function() {
 mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     files.forEach(file => {
-        // Tăng giới hạn kích thước lên 100MB cho video
+        // Kiểm tra kích thước file
         const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
         
         if (file.size > maxSize) {
-            alert(`File quá lớn. Giới hạn: ${maxSize/(1024*1024)}MB`);
+            alert(`File ${file.name} quá lớn. Giới hạn: ${maxSize/(1024*1024)}MB`);
             return;
         }
 
+        // Đọc file
         const reader = new FileReader();
         reader.onload = function(e) {
             const mediaType = file.type.startsWith('video/') ? 'video' : 'image';
-            
             selectedMedia.push({
                 type: mediaType,
                 url: e.target.result,
@@ -210,25 +210,36 @@ mediaInput.addEventListener('change', function(e) {
             });
             updateMediaPreview();
             updatePostButton();
-        }
+        };
         reader.readAsDataURL(file);
     });
 });
 
+
     // Update Media Preview
+// Cập nhật preview media
 function updateMediaPreview() {
-    mediaPreview.innerHTML = selectedMedia.map((media, index) => `
-        <div class="preview-item ${media.type}-preview">
-            ${media.type === 'image' 
-                ? `<img src="${media.url}" alt="Preview">`
-                : `<video src="${media.url}" controls muted></video>`
-            }
-            <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-        </div>
-    `).join('');
+    const previewHTML = selectedMedia.map((media, index) => {
+        if (media.type === 'video') {
+            return `
+                <div class="preview-item video-preview">
+                    <video src="${media.url}" controls playsinline></video>
+                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="preview-item image-preview">
+                    <img src="${media.url}" alt="Preview">
+                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+                </div>
+            `;
+        }
+    }).join('');
+
+    mediaPreview.innerHTML = previewHTML;
     mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
 }
-
     // Remove Media
     window.removeMedia = function(index) {
         selectedMedia.splice(index, 1);
