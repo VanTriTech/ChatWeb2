@@ -192,6 +192,10 @@ document.addEventListener('DOMContentLoaded', function() {
 // Sửa phần xử lý media input để hỗ trợ MKV
 mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
+    
+    // Reset selectedMedia array
+    selectedMedia = [];
+    
     files.forEach(file => {
         const maxSize = 100 * 1024 * 1024; // 100MB
         if (file.size > maxSize) {
@@ -199,42 +203,36 @@ mediaInput.addEventListener('change', function(e) {
             return;
         }
 
-        // Kiểm tra và xử lý file MKV
-        if (file.name.toLowerCase().endsWith('.mkv')) {
-            // Chuyển đổi MKV sang định dạng có thể phát được trên web
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const videoBlob = new Blob([e.target.result], { type: 'video/x-matroska' });
-                const videoUrl = URL.createObjectURL(videoBlob);
-                
-                selectedMedia.push({
-                    type: 'video',
-                    url: videoUrl,
-                    file: file,
-                    originalName: file.name
-                });
-                updateMediaPreview();
-                updatePostButton();
-            };
-            reader.readAsArrayBuffer(file);
-        } else {
-            // Xử lý các file khác như cũ
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-                selectedMedia.push({
-                    type: mediaType,
-                    url: e.target.result,
-                    file: file
-                });
-                updateMediaPreview();
-                updatePostButton();
-            }
-            reader.readAsDataURL(file);
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+            selectedMedia.push({
+                type: mediaType,
+                url: e.target.result,
+                file: file
+            });
+            updateMediaPreview();
+            updatePostButton();
         }
+        reader.readAsDataURL(file);
     });
 });
+// Thêm hàm clear form
+function clearPostForm() {
+    postInput.value = '';
+    postInput.style.height = 'auto';
+    selectedMedia = [];
+    mediaPreview.style.display = 'none';
+    mediaPreview.innerHTML = '';
+    mediaInput.value = '';
+    updatePostButton();
+}
 
+// Sửa lại event listener cho nút đăng
+postButton.addEventListener('click', function() {
+    createPost();
+    clearPostForm();
+});
     // Update Media Preview
 function updateMediaPreview() {
     mediaPreview.innerHTML = selectedMedia.map((media, index) => `
@@ -265,45 +263,49 @@ function updateMediaPreview() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-    async function createPost() {
-        const content = postInput.value.trim();
-        if (!content && selectedMedia.length === 0) return;
+async function createPost() {
+    const content = postInput.value.trim();
+    if (!content && selectedMedia.length === 0) return;
 
-        const postId = Date.now();
-        const post = {
-            id: postId,
-            content: content,
-            author: {
-                name: profileName,
-                username: profileUsername,
-                avatar: document.querySelector('.profile-avatar img').src
-            },
-            media: selectedMedia,
-            reactions: {
-                likes: 0,
-                hearts: 0,
-                angry: 0
-            },
-            userReactions: {}, // Lưu reaction của từng user
-            comments: [],
-            timestamp: new Date().toISOString()
-        };
+    const postId = Date.now();
+    const post = {
+        id: postId,
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: selectedMedia.map(media => ({
+            type: media.type,
+            url: media.url
+        })),
+        reactions: {
+            likes: 0,
+            hearts: 0,
+            angry: 0
+        },
+        userReactions: {},
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
 
-        // Add post to DOM
-        addPostToDOM(post);
+    // Thêm post vào DOM
+    addPostToDOM(post);
 
-        // Save to localStorage
-        savePost(post);
+    // Lưu vào localStorage
+    savePost(post);
 
-        // Reset form
-        postInput.value = '';
-        postInput.style.height = 'auto';
-        selectedMedia = [];
-        mediaPreview.style.display = 'none';
-        mediaPreview.innerHTML = '';
-        mediaInput.value = '';
-        updatePostButton();
-    }
+    // Reset form
+    postInput.value = '';
+    postInput.style.height = 'auto';
+    selectedMedia = [];
+    mediaPreview.style.display = 'none';
+    mediaPreview.innerHTML = '';
+    mediaInput.value = '';
+    updatePostButton();
+}
+
 
 
     // Initialize Video Players
@@ -808,38 +810,29 @@ function addPostToDOM(post) {
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
 function generateMediaGrid(mediaItems) {
     if (!mediaItems.length) return '';
-
-    const imageItems = mediaItems.filter(item => item.type === 'image');
-    const videoItems = mediaItems.filter(item => item.type === 'video');
-
-    let gridClass = getMediaGridClass(mediaItems.length);
-    let html = `<div class="post-media ${gridClass}">`;
-
-    // Xử lý videos - đặt trong post-media
-    videoItems.forEach(video => {
-        html += `
-            <div class="video-container">
-                <video controls style="width: 100%; max-width: 400px; max-height: 300px;">
-                    <source src="${video.url}" type="video/x-matroska">
-                    <source src="${video.url}" type="video/mp4">
-                    <source src="${video.url}" type="video/webm">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-        `;
+    
+    let html = '';
+    
+    // Xử lý video riêng
+    mediaItems.forEach(media => {
+        if (media.type === 'video') {
+            html += `
+                <div class="post-video-frame">
+                    <video controls>
+                        <source src="${media.url}" type="video/mp4">
+                        <source src="${media.url}" type="video/webm">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            `;
+        } else if (media.type === 'image') {
+            // Xử lý ảnh như bình thường
+            html += `<div class="image-container">
+                <img src="${media.url}" alt="Post image">
+            </div>`;
+        }
     });
-
-
-        // Xử lý images
-    imageItems.forEach(image => {
-        html += `
-            <div class="image-container">
-                <img src="${image.url}" alt="Post image">
-            </div>
-        `;
-    });
-
-    html += '</div>';
+    
     return html;
 }
     function getMediaGridClass(count) {
