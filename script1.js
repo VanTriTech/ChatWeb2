@@ -397,18 +397,20 @@ function loadPosts() {
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Sắp xếp posts theo thời gian mới nhất
-    posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    
-    posts.forEach(post => {
-        addPostToDOM(post);
-        setupCommentCollapse(post.id);
-        post.comments.forEach(comment => {
-            if (comment.replies && comment.replies.length > 0) {
-                setupReplyCollapse(comment.id);
-            }
+    // Sắp xếp posts theo thời gian mới nhất và lọc bỏ các post có @18+
+    posts
+        .filter(post => !(post.content && post.content.includes("@18+")))
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .forEach(post => {
+            addPostToDOM(post);
+            setupCommentCollapse(post.id);
+            post.comments.forEach(comment => {
+                if (comment.replies && comment.replies.length > 0) {
+                    setupReplyCollapse(comment.id);
+                }
+            });
         });
-    });
+    
     restoreCommentStates();
     restoreReactionStates();
 }
@@ -605,6 +607,10 @@ let currentImageIndex = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
+    // Kiểm tra nếu nội dung có chứa "@18+"
+    if (post.content && post.content.includes("@18+")) {
+        return; // Bỏ qua không hiển thị post này
+    }
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
