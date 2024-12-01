@@ -391,15 +391,20 @@ function restoreCommentStates() {
 }
 
 // Sửa lại hàm loadPosts
+// Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Sắp xếp posts theo thời gian mới nhất và lọc bỏ các post có @18+
+    // Sắp xếp posts theo thời gian mới nhất và lọc bỏ các post có chính xác chữ "@18+"
     posts
-        .filter(post => !(post.content && post.content.includes("@18+")))
+        .filter(post => {
+            // Kiểm tra nếu content tồn tại và chứa chính xác chuỗi "@18+"
+            if (!post.content) return true; // Giữ lại post không có content
+            return !post.content.includes("@18+"); // Lọc bỏ post có "@18+"
+        })
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
         .forEach(post => {
             addPostToDOM(post);
@@ -414,6 +419,7 @@ function loadPosts() {
     restoreCommentStates();
     restoreReactionStates();
 }
+
 
 
 // Thay đổi phần xử lý comment input
@@ -607,7 +613,7 @@ let currentImageIndex = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
-    // Kiểm tra nếu nội dung có chứa "@18+"
+    // Kiểm tra nếu nội dung có chứa chính xác "@18+"
     if (post.content && post.content.includes("@18+")) {
         return; // Bỏ qua không hiển thị post này
     }
