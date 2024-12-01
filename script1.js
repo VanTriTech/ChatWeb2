@@ -596,7 +596,8 @@ function addPostToDOM(post) {
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
-
+    
+    // Thêm nội dung post như bình thường
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
     const postContent = post.content ? `<p class="post-text">${post.content.replace(/\n/g, '<br>')}</p>` : '';
     const commentsHTML = post.comments ? post.comments.map(comment => `
@@ -741,7 +742,6 @@ function addPostToDOM(post) {
     postsContainer.insertBefore(postElement, postsContainer.firstChild);
     updateMediaTab();
 }
-
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
 function generateMediaGrid(mediaItems) {
