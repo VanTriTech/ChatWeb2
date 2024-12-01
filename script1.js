@@ -1,3 +1,4 @@
+
 (function() {
     let isLocked = false;
     
@@ -263,39 +264,29 @@ function showTwitterLinkInput() {
 
 // Cập nhật hàm hiển thị media preview
 function updateMediaPreview() {
-    const previewContainer = document.querySelector('.media-preview');
-    previewContainer.innerHTML = '';
-
-    selectedMedia.forEach((media, index) => {
-        const previewItem = document.createElement('div');
-        previewItem.className = 'preview-item';
-
-        if (media.type === 'twitter-video') {
-            // Tạo preview cho Twitter video
-            previewItem.innerHTML = `
-                <div class="twitter-preview">
-                    <iframe src="${getTwitterEmbedUrl(media.url)}" 
+    const mediaPreview = document.querySelector('.media-preview');
+    mediaPreview.innerHTML = selectedMedia.map((media, index) => {
+        if (media.type === 'image') {
+            return `
+                <div class="preview-item">
+                    <img src="${media.url}" alt="Preview">
+                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+                </div>
+            `;
+        } else if (media.type === 'twitter-video') {
+            return `
+                <div class="preview-item twitter-preview">
+                    <iframe src="${media.embedUrl}" 
                             width="100%" 
-                            height="100%"
+                            height="100%" 
                             frameborder="0">
                     </iframe>
+                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
                 </div>
-                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-            `;
-        } else if (media.type === 'image') {
-            previewItem.innerHTML = `
-                <img src="${media.url}" alt="Preview">
-                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-            `;
-        } else if (media.type === 'video') {
-            previewItem.innerHTML = `
-                <video src="${media.url}" controls></video>
-                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
             `;
         }
-
-        previewContainer.appendChild(previewItem);
-    });
+    }).join('');
+    mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
 }
 
     // Remove Media
@@ -1823,26 +1814,16 @@ function addTwitterVideo() {
         alert('Link không hợp lệ! Vui lòng nhập link bài đăng từ X.com');
         return;
     }
-
+    
     // Thêm video vào selectedMedia
-    if (!window.selectedMedia) {
-        window.selectedMedia = [];
-    }
-
-    window.selectedMedia.push({
+    selectedMedia.push({
         type: 'twitter-video',
         url: url
     });
-
-    // Cập nhật preview
+    
     updateMediaPreview();
-    
-    // Xóa input và đóng form
-    input.value = '';
+    updatePostButton();
     cancelTwitterInput();
-    
-    // Hiển thị thông báo
-    alert('Đã thêm video thành công!');
 }
 
 // Hàm hủy nhập link
@@ -1864,4 +1845,66 @@ function isTwitterVideoUrl(url) {
 function getTwitterEmbedUrl(url) {
     const tweetId = url.split('/status/')[1].split('?')[0];
     return `https://platform.twitter.com/embed/Tweet.html?id=${tweetId}`;
+}
+// Biến global để lưu media đã chọn
+window.selectedMedia = [];
+
+// Hàm hiển thị form nhập link video X.com
+function showTwitterVideoInput() {
+    const tweetForm = `
+        <div class="twitter-input-container">
+            <input type="text" 
+                   class="twitter-url-input" 
+                   placeholder="Dán link bài đăng từ X.com có chứa video">
+            <div class="twitter-input-buttons">
+                <button onclick="addTwitterVideo()" class="add-btn">Thêm</button>
+                <button onclick="cancelTwitterInput()" class="cancel-btn">Hủy</button>
+            </div>
+        </div>
+    `;
+    
+    // Thêm form vào sau nút upload
+    document.querySelector('.media-upload').insertAdjacentHTML('afterend', tweetForm);
+}
+
+// Hàm thêm video từ X.com
+function addTwitterVideo() {
+    const input = document.querySelector('.twitter-url-input');
+    const url = input.value.trim();
+    
+    if (!url) {
+        alert('Vui lòng nhập link video!');
+        return;
+    }
+    
+    if (!isTwitterVideoUrl(url)) {
+        alert('Link không hợp lệ! Vui lòng nhập link bài đăng từ X.com');
+        return;
+    }
+    
+    // Thêm video vào selectedMedia
+    window.selectedMedia.push({
+        type: 'twitter-video',
+        url: url
+    });
+    
+    // Xóa input và đóng form
+    input.value = '';
+    cancelTwitterInput();
+    
+    // Hiển thị thông báo
+    alert('Đã thêm video thành công!');
+}
+
+// Hàm hủy nhập link
+function cancelTwitterInput() {
+    const container = document.querySelector('.twitter-input-container');
+    if (container) {
+        container.remove();
+    }
+}
+
+// Hàm kiểm tra link X.com
+function isTwitterVideoUrl(url) {
+    return url.match(/^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/);
 }
