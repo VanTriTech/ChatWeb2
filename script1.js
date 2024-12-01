@@ -1,3 +1,4 @@
+
 (function() {
     let isLocked = false;
     
@@ -253,21 +254,30 @@ mediaInput.addEventListener('change', async function(e) {
     // Create New Post
 postButton.addEventListener('click', createPost);
 
-// Sửa lại hàm createPost
+// Create New Post
+postButton.addEventListener('click', createPost);
+
 async function createPost() {
-    const content = postInput.value.trim();
-    if (!content && selectedMedia.length === 0) return;
-
     try {
-        // Xử lý media trước khi tạo post
-        const processedMedia = await Promise.all(selectedMedia.map(async media => ({
-            type: media.type,
-            url: media.url,
-            fileName: media.fileName,
-            fileSize: media.fileSize,
-            fileType: media.fileType
-        })));
+        const content = postInput.value.trim();
+        if (!content && selectedMedia.length === 0) {
+            console.log('Không có nội dung hoặc media');
+            return;
+        }
 
+        // Xử lý media trước
+        const processedMedia = [];
+        for (const media of selectedMedia) {
+            processedMedia.push({
+                type: media.type,
+                url: media.url,
+                fileName: media.fileName,
+                fileSize: media.fileSize,
+                fileType: media.fileType
+            });
+        }
+
+        // Tạo post object
         const post = {
             id: Date.now(),
             content: content,
@@ -287,24 +297,35 @@ async function createPost() {
 
         // Thêm post vào DOM và lưu
         addPostToDOM(post);
-        savePost(post);
+        
+        // Lưu vào localStorage
+        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+        posts.unshift(post);
+        localStorage.setItem('posts', JSON.stringify(posts));
 
         // Reset form
-        postInput.value = '';
-        postInput.style.height = 'auto';
-        selectedMedia = [];
-        mediaPreview.style.display = 'none';
-        mediaPreview.innerHTML = '';
-        mediaInput.value = '';
-        updatePostButton();
+        resetPostForm();
         
         // Cập nhật tab Media
         updateMediaTab();
 
+        console.log('Đăng bài thành công:', post);
+
     } catch (error) {
-        console.error('Lỗi chi tiết:', error);
+        console.error('Chi tiết lỗi:', error);
         alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại.');
     }
+}
+
+// Thêm hàm reset form mới này
+function resetPostForm() {
+    postInput.value = '';
+    postInput.style.height = 'auto';
+    selectedMedia = [];
+    mediaPreview.style.display = 'none';
+    mediaPreview.innerHTML = '';
+    mediaInput.value = '';
+    updatePostButton();
 }
 
 // Thêm hàm reset form mới này
