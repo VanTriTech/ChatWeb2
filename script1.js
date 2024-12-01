@@ -189,47 +189,55 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Media Upload Handler
 // Hàm xử lý khi chọn video
+// Hàm xử lý khi chọn media
 mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     files.forEach(file => {
-        if (file.size > 50 * 1024 * 1024) { // Giới hạn 50MB
-            alert('Video quá lớn. Vui lòng chọn video nhỏ hơn 50MB');
-            return;
-        }
-
         if (file.type.startsWith('video/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                // Tạo video element để kiểm tra
-                const video = document.createElement('video');
-                video.src = e.target.result;
-                video.onloadedmetadata = function() {
-                    selectedMedia.push({
-                        type: 'video',
-                        url: e.target.result,
-                        file: file
-                    });
-                    updateMediaPreview();
-                    updatePostButton();
-                };
-            };
-            reader.readAsDataURL(file);
+            handleVideoUpload(file);
         } else if (file.type.startsWith('image/')) {
-            // Xử lý ảnh như cũ
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                selectedMedia.push({
-                    type: 'image',
-                    url: e.target.result,
-                    file: file
-                });
-                updateMediaPreview();
-                updatePostButton();
-            };
-            reader.readAsDataURL(file);
+            handleImageUpload(file);
         }
     });
 });
+
+// Hàm xử lý upload video
+function handleVideoUpload(file) {
+    if (file.size > 50 * 1024 * 1024) {
+        alert('Video quá lớn. Vui lòng chọn video nhỏ hơn 50MB');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const video = document.createElement('video');
+        video.src = e.target.result;
+        
+        video.onloadedmetadata = function() {
+            const mediaItem = {
+                type: 'video',
+                url: e.target.result,
+                file: file,
+                width: video.videoWidth,
+                height: video.videoHeight
+            };
+
+            selectedMedia.push(mediaItem);
+            updateMediaPreview();
+            updatePostButton();
+        };
+
+        video.onerror = function() {
+            alert('Không thể tải video. Vui lòng thử lại.');
+        };
+    };
+
+    reader.onerror = function() {
+        alert('Lỗi khi đọc file video.');
+    };
+
+    reader.readAsDataURL(file);
+}
 
 
     // Update Media Preview
@@ -238,13 +246,15 @@ function updateMediaPreview() {
         if (media.type === 'video') {
             return `
                 <div class="preview-item video-preview">
-                    <video src="${media.url}" controls preload="metadata">
-                        Your browser does not support the video tag.
+                    <video src="${media.url}" controls preload="metadata" playsinline>
+                        <source src="${media.url}" type="video/mp4">
+                        Your browser does not support video playback.
                     </video>
                     <button class="remove-preview" onclick="removeMedia(${index})">×</button>
                 </div>
             `;
         } else {
+            // Xử lý ảnh như cũ
             return `
                 <div class="preview-item">
                     <img src="${media.url}" alt="Preview">
@@ -253,6 +263,7 @@ function updateMediaPreview() {
             `;
         }
     }).join('');
+    
     mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
 }
 
