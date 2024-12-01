@@ -615,11 +615,13 @@ let currentImages = [];
 function addPostToDOM(post) {
     // Kiểm tra nếu nội dung có chứa chính xác "@18+"
     if (post.content && post.content.includes("@18+")) {
-        return; // Bỏ qua không hiển thị post này
+        return;
     }
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
+    // Xử lý nội dung để giữ nguyên xuống dòng
+    const formattedContent = post.content ? post.content.replace(/\n/g, '<br>') : '';
 
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
     const commentsHTML = post.comments ? post.comments.map(comment => `
@@ -728,9 +730,11 @@ function addPostToDOM(post) {
         Xóa
     </div>
 </div>
+            ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
+
                 </div>
             </div>
-            ${post.content ? `<p class="post-text">${post.content}</p>` : ''}
+        ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
             ${mediaHTML}
     <div class="post-actions">
         <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
