@@ -391,6 +391,7 @@ function restoreCommentStates() {
 }
 
 // Sửa lại hàm loadPosts
+// Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     postsContainer.innerHTML = '';
@@ -432,6 +433,7 @@ function loadPosts() {
     restoreCommentStates();
     restoreReactionStates();
 }
+
 
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
