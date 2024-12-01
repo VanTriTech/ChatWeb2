@@ -191,21 +191,16 @@ document.addEventListener('DOMContentLoaded', function() {
 mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     files.forEach(file => {
-        // Giới hạn kích thước: 100MB cho video, 10MB cho ảnh
-        const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
-        
-        if (file.size > maxSize) {
-            alert(`File ${file.name} quá lớn. Giới hạn: ${maxSize/(1024*1024)}MB`);
+        if (file.size > 50 * 1024 * 1024) { // Giới hạn 50MB
+            alert('File quá lớn. Vui lòng chọn file nhỏ hơn 50MB');
             return;
         }
 
         const reader = new FileReader();
         reader.onload = function(e) {
-            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
             selectedMedia.push({
-                type: mediaType,
-                url: e.target.result,
-                file: file
+                type: file.type.startsWith('video/') ? 'video' : 'image',
+                url: e.target.result
             });
             updateMediaPreview();
             updatePostButton();
@@ -215,25 +210,22 @@ mediaInput.addEventListener('change', function(e) {
 });
 
 
-
     // Update Media Preview
 // Cập nhật preview media
 function updateMediaPreview() {
-    const previewHTML = selectedMedia.map((media, index) => {
-        if (media.type === 'video') {
-            return `
-                <div class="preview-item video-preview">
-                    <video src="${media.url}" controls playsinline></video>
-                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-                </div>
-            `;
-        }
-        return `
-            <div class="preview-item image-preview">
-                <img src="${media.url}" alt="Preview">
-                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-            </div>
-        `;
+    mediaPreview.innerHTML = selectedMedia.map((media, index) => `
+        <div class="preview-item">
+            ${media.type === 'video' 
+                ? `<video src="${media.url}" controls style="max-width: 100%; max-height: 200px;"></video>`
+                : `<img src="${media.url}" alt="Preview">`
+            }
+            <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+        </div>
+    `).join('');
+    
+    mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
+}
+
     }).join('');
 
     mediaPreview.innerHTML = previewHTML;
