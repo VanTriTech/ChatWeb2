@@ -402,7 +402,6 @@ function loadPosts() {
     restoreCommentStates();
     restoreReactionStates();
 }
-
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
     const input = event.target;
@@ -599,6 +598,7 @@ function addPostToDOM(post) {
     postElement.setAttribute('data-post-id', post.id);
 
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
+    const postContent = post.content ? `<p class="post-text">${post.content.replace(/\n/g, '<br>')}</p>` : '';
     const commentsHTML = post.comments ? post.comments.map(comment => `
         <div class="comment" data-comment-id="${comment.id}">
             <img src="${comment.author.avatar}" alt="Avatar" class="comment-avatar">
