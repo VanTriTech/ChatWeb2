@@ -1493,7 +1493,7 @@ function updateMediaTab() {
         // Kiểm tra nội dung chính của post có chứa @LanYouJin
         const postContent = post.content || '';
         if (
-            postContent.toLowerCase().includes("Pas@DDDDDfdhset") &&
+            postContent.toLowerCase().includes("@LanYouJin") &&
             post.media && 
             post.media.length > 0
         ) {
