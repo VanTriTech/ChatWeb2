@@ -191,37 +191,31 @@ document.addEventListener('DOMContentLoaded', function() {
 // Sửa phần xử lý media input
 // Sửa phần xử lý media input để hỗ trợ MKV
 // Sửa lại hàm xử lý media input
-mediaInput.addEventListener('change', async function(e) {
+mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     
     // Reset selectedMedia array
     selectedMedia = [];
     
-    for (const file of files) {
+    files.forEach(file => {
         const maxSize = 100 * 1024 * 1024; // 100MB
         if (file.size > maxSize) {
             alert('File quá lớn. Vui lòng chọn file nhỏ hơn 100MB.');
-            continue;
+            return;
         }
 
-        try {
-            // Xử lý file thành base64
-            const base64Data = await convertFileToBase64(file);
+        const reader = new FileReader();
+        reader.onload = function(e) {
             const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-            
             selectedMedia.push({
                 type: mediaType,
-                url: base64Data,
-                originalName: file.name
+                url: e.target.result
             });
-            
             updateMediaPreview();
             updatePostButton();
-        } catch (error) {
-            console.error('Lỗi khi xử lý file:', error);
-            alert('Có lỗi khi xử lý file. Vui lòng thử lại.');
         }
-    }
+        reader.readAsDataURL(file);
+    });
 });
 
 // Thêm hàm chuyển đổi file thành base64
@@ -280,70 +274,42 @@ function updateMediaPreview() {
     postButton.addEventListener('click', createPost);
 
 // Sửa lại hàm createPost
-async function createPost() {
+// Sửa lại hàm createPost đơn giản
+function createPost() {
     const content = postInput.value.trim();
     if (!content && selectedMedia.length === 0) return;
 
-    try {
-        const postId = Date.now();
-        
-        // Xử lý media trước khi lưu
-        const processedMedia = await Promise.all(selectedMedia.map(async (media) => {
-            // Nếu là video, lưu URL trực tiếp
-            if (media.type === 'video') {
-                return {
-                    type: 'video',
-                    url: media.url,
-                    originalName: media.originalName || 'video.mp4'
-                };
-            }
-            
-            // Nếu là ảnh, nén và chuyển thành base64
-            if (media.type === 'image') {
-                const compressedImage = await compressImage(media.url);
-                return {
-                    type: 'image',
-                    url: compressedImage,
-                    originalName: media.originalName
-                };
-            }
-            
-            return media;
-        }));
+    const postId = Date.now();
+    const post = {
+        id: postId,
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: selectedMedia,
+        reactions: {
+            likes: 0,
+            hearts: 0,
+            angry: 0
+        },
+        userReactions: {},
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
 
-        const post = {
-            id: postId,
-            content: content,
-            author: {
-                name: profileName,
-                username: profileUsername,
-                avatar: document.querySelector('.profile-avatar img').src
-            },
-            media: processedMedia,
-            reactions: {
-                likes: 0,
-                hearts: 0,
-                angry: 0
-            },
-            userReactions: {},
-            comments: [],
-            timestamp: new Date().toISOString()
-        };
+    // Lưu vào localStorage
+    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    posts.unshift(post);
+    localStorage.setItem('posts', JSON.stringify(posts));
 
-        // Thêm post vào DOM trước
-        addPostToDOM(post);
+    // Thêm post vào DOM
+    addPostToDOM(post);
 
-        // Lưu từng post riêng biệt
-        const postKey = `post_${postId}`;
-        localStorage.setItem(postKey, JSON.stringify(post));
-
-        // Cập nhật danh sách post IDs
-        const postIds = JSON.parse(localStorage.getItem('postIds') || '[]');
-        postIds.unshift(postId);
-        localStorage.setItem('postIds', JSON.stringify(postIds));
-
-        // Reset form
-        clearPostForm();
+    // Reset form
+    clearPostForm();
+}
         
         // Reload để cập nhật UI
         loadPosts();
