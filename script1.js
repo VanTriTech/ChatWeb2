@@ -782,22 +782,26 @@ function addPostToDOM(post) {
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
 function generateMediaGrid(mediaItems) {
-        if (!mediaItems.length) return '';
+    if (!mediaItems.length) return '';
 
-        const imageItems = mediaItems.filter(item => item.type === 'image');
-        const videoItems = mediaItems.filter(item => item.type === 'video');
+    const imageItems = mediaItems.filter(item => item.type === 'image');
+    const videoItems = mediaItems.filter(item => item.type === 'video');
 
         let gridClass = getMediaGridClass(mediaItems.length);
         let html = `<div class="post-media ${gridClass}">`;
 
         // Xử lý videos
-        videoItems.forEach(video => {
-            html += `
-                <div class="video-container">
-                    <video src="${video.url}" controls></video>
-                </div>
-            `;
-        });
+    videoItems.forEach(video => {
+        html += `
+            <div class="video-container" style="aspect-ratio: 1/1; overflow: hidden;">
+                <video src="${video.url}" 
+                       controls
+                       style="width: 100%; height: 100%; object-fit: cover;">
+                </video>
+            </div>
+        `;
+    });
+
 
         // Xử lý tất cả ảnh, không giới hạn số lượng
         const imageUrls = imageItems.map(img => img.url);
