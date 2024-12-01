@@ -405,7 +405,7 @@ function loadPosts() {
             if (!post.content) return true; // Giữ lại post không có content
             return !post.content.includes("!@P@@word"); // Lọc bỏ post có "!@P@@word"
         })
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
         .forEach(post => {
             addPostToDOM(post);
             setupCommentCollapse(post.id);
