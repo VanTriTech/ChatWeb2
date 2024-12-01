@@ -250,44 +250,50 @@ mediaInput.addEventListener('change', function(e) {
 postButton.addEventListener('click', createPost);
 
 // Sửa lại hàm createPost
+// Sửa lại hàm createPost
 async function createPost() {
     const content = postInput.value.trim();
     if (!content && selectedMedia.length === 0) return;
 
-    const processedMedia = selectedMedia.map(media => ({
-        type: media.type,
-        url: media.url,
-        fileName: media.fileName,
-        fileSize: media.fileSize,
-        fileType: media.fileType
-    }));
-
-    const post = {
-        id: Date.now(),
-        content: content,
-        author: {
-            name: profileName,
-            username: profileUsername,
-            avatar: document.querySelector('.profile-avatar img').src
-        },
-        media: processedMedia,
-        reactions: {
-            likes: 0,
-            hearts: 0,
-            angry: 0
-        },
-        userReactions: {},
-        comments: [],
-        timestamp: new Date().toISOString()
-    };
-
     try {
+        const post = {
+            id: Date.now(),
+            content: content,
+            author: {
+                name: profileName,
+                username: profileUsername,
+                avatar: document.querySelector('.profile-avatar img').src
+            },
+            media: selectedMedia.map(media => ({
+                type: media.type,
+                url: media.url,
+                fileName: media.fileName,
+                fileSize: media.fileSize,
+                fileType: media.fileType
+            })),
+            likes: 0,
+            likes2: 0,
+            likedBy: [],
+            liked2By: [],
+            comments: [],
+            timestamp: new Date().toISOString()
+        };
+
         // Thêm post vào DOM và lưu
         addPostToDOM(post);
         savePost(post);
         
         // Reset form
-        resetPostForm();
+        postInput.value = '';
+        postInput.style.height = 'auto';
+        selectedMedia = [];
+        mediaPreview.style.display = 'none';
+        mediaPreview.innerHTML = '';
+        mediaInput.value = '';
+        updatePostButton();
+        
+        // Cập nhật tab Media nếu cần
+        updateMediaTab();
         
     } catch (error) {
         console.error('Lỗi khi tạo bài đăng:', error);
