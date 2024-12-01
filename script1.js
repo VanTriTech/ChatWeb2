@@ -1783,3 +1783,60 @@ function restoreData(event) {
     };
     reader.readAsText(file);
 }
+// Hàm hiển thị form nhập link video X.com
+function showTwitterVideoInput() {
+    const tweetForm = `
+        <div class="twitter-input-container">
+            <input type="text" 
+                   class="twitter-url-input" 
+                   placeholder="Dán link bài đăng từ X.com có chứa video">
+            <div class="twitter-input-buttons">
+                <button onclick="addTwitterVideo()" class="add-btn">Thêm</button>
+                <button onclick="cancelTwitterInput()" class="cancel-btn">Hủy</button>
+            </div>
+        </div>
+    `;
+    
+    // Thêm form vào sau nút upload
+    document.querySelector('.media-upload').insertAdjacentHTML('afterend', tweetForm);
+}
+
+// Hàm thêm video từ X.com
+function addTwitterVideo() {
+    const input = document.querySelector('.twitter-url-input');
+    const url = input.value.trim();
+    
+    if (!isTwitterVideoUrl(url)) {
+        alert('Link không hợp lệ! Vui lòng nhập link bài đăng từ X.com');
+        return;
+    }
+    
+    selectedMedia.push({
+        type: 'twitter-video',
+        url: url,
+        embedUrl: getTwitterEmbedUrl(url)
+    });
+    
+    updateMediaPreview();
+    updatePostButton();
+    cancelTwitterInput();
+}
+
+// Hàm hủy nhập link
+function cancelTwitterInput() {
+    const container = document.querySelector('.twitter-input-container');
+    if (container) {
+        container.remove();
+    }
+}
+
+// Hàm kiểm tra link X.com
+function isTwitterVideoUrl(url) {
+    return url.match(/^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/);
+}
+
+// Hàm chuyển đổi link thành embed URL
+function getTwitterEmbedUrl(url) {
+    const tweetId = url.split('/status/')[1].split('?')[0];
+    return `https://platform.twitter.com/embed/Tweet.html?id=${tweetId}`;
+}
