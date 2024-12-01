@@ -1714,3 +1714,125 @@ function restoreData(event) {
     };
     reader.readAsText(file);
 }
+// Thêm hàm hiển thị input cho Twitter video
+window.showTwitterVideoInput = function() {
+    // Tạo modal input cho Twitter URL
+    const modal = document.createElement('div');
+    modal.className = 'twitter-video-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <h3>Thêm video từ X.com</h3>
+            <input type="text" 
+                   id="twitter-url-input" 
+                   placeholder="Dán link bài đăng X.com vào đây..."
+                   class="twitter-url-input">
+            <div class="modal-actions">
+                <button onclick="closeTwitterModal()" class="cancel-btn">Hủy</button>
+                <button onclick="processTwitterUrl()" class="save-btn">Thêm</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Focus vào input
+    setTimeout(() => {
+        document.getElementById('twitter-url-input').focus();
+    }, 100);
+}
+
+// Hàm đóng modal
+window.closeTwitterModal = function() {
+    const modal = document.querySelector('.twitter-video-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+// Hàm xử lý URL Twitter
+window.processTwitterUrl = function() {
+    const input = document.getElementById('twitter-url-input');
+    const url = input.value.trim();
+    
+    if (!url) {
+        alert('Vui lòng nhập URL từ X.com');
+        return;
+    }
+
+    // Kiểm tra URL hợp lệ
+    if (!isValidTwitterUrl(url)) {
+        alert('URL không hợp lệ. Vui lòng nhập URL từ X.com');
+        return;
+    }
+
+    // Tạo embed code
+    const tweetId = extractTweetId(url);
+    const embedCode = `<blockquote class="twitter-tweet" data-conversation="none">
+        <a href="${url}"></a>
+    </blockquote>
+    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"><\/script>`;
+
+    // Thêm vào post content
+    const postInput = document.getElementById('post-input');
+    postInput.value += `\n${url}\n`;
+    
+    // Lưu embed code để sử dụng khi tạo post
+    window.currentTwitterEmbed = embedCode;
+    
+    // Đóng modal
+    closeTwitterModal();
+    
+    // Enable nút đăng bài
+    document.getElementById('post-button').disabled = false;
+}
+
+// Hàm kiểm tra URL Twitter hợp lệ
+function isValidTwitterUrl(url) {
+    return url.match(/^https?:\/\/(twitter\.com|x\.com)\/[a-zA-Z0-9_]+\/status\/[0-9]+/i);
+}
+
+// Hàm trích xuất Tweet ID
+function extractTweetId(url) {
+    const match = url.match(/\/status\/([0-9]+)/);
+    return match ? match[1] : null;
+}
+
+// Sửa lại hàm createPost để hỗ trợ Twitter embed
+async function createPost() {
+    const content = postInput.value.trim();
+    if (!content && selectedMedia.length === 0 && !window.currentTwitterEmbed) return;
+
+    const postId = Date.now();
+    const post = {
+        id: postId,
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: selectedMedia,
+        twitterEmbed: window.currentTwitterEmbed, // Thêm Twitter embed
+        reactions: {
+            likes: 0,
+            hearts: 0,
+            angry: 0
+        },
+        userReactions: {},
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
+
+    // Thêm post vào DOM và lưu
+    addPostToDOM(post);
+    savePost(post);
+
+    // Reset form
+    postInput.value = '';
+    postInput.style.height = 'auto';
+    selectedMedia = [];
+    mediaPreview.style.display = 'none';
+    mediaPreview.innerHTML = '';
+    mediaInput.value = '';
+    window.currentTwitterEmbed = null; // Reset Twitter embed
+    updatePostButton();
+}
