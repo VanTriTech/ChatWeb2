@@ -1832,10 +1832,10 @@ body {
     object-fit: contain; /* Đảm bảo video hiển thị đúng tỷ lệ */
     max-height: 80vh; /* Giới hạn chiều cao tối đa */
 }
-/* Tạo khung riêng cho video */
+/* Tăng kích thước khung video */
 .post-video-frame {
     width: 100%;
-    max-width: 600px;
+    max-width: 1200px; /* Tăng từ 600px lên 1200px */
     margin: 10px auto;
     background: #000;
     border-radius: 12px;
@@ -1847,4 +1847,5 @@ body {
     width: 100%;
     height: auto;
     display: block;
+    min-height: 400px; /* Thêm chiều cao tối thiểu */
 }
