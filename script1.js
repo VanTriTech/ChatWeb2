@@ -44,24 +44,6 @@
             </div>
         `;
 
-        // Thêm style cho animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes glitch {
-                0% { transform: translate(0) skew(0deg) }
-                20% { transform: translate(-2px, 2px) skew(2deg) }
-                40% { transform: translate(-2px, -2px) skew(-2deg) }
-                60% { transform: translate(2px, 2px) skew(-2deg) }
-                80% { transform: translate(2px, -2px) skew(2deg) }
-                100% { transform: translate(0) skew(0deg) }
-            }
-            @keyframes blink {
-                0% { opacity: 1 }
-                50% { opacity: 0 }
-                100% { opacity: 1 }
-            }
-        `;
-        document.head.appendChild(style);
 
         // Log IP
         fetch('https://api.ipify.org?format=json')
@@ -396,23 +378,30 @@ function loadPosts() {
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Thay đổi cách sắp xếp thành ngẫu nhiên
-    posts.sort(() => Math.random() - 0.5);
+    // Sắp xếp bài đăng theo thời gian mới nhất
+    posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
     posts.forEach(post => {
+        // Kiểm tra xem post có tồn tại không
+        if (!post) return;
+
+        // Thêm post vào DOM trực tiếp mà không cần kiểm tra nội dung
         addPostToDOM(post);
+        
+        // Thiết lập các tính năng tương tác
         setupCommentCollapse(post.id);
-        post.comments.forEach(comment => {
-            if (comment.replies && comment.replies.length > 0) {
-                setupReplyCollapse(comment.id);
-            }
-        });
+        if (post.comments) {
+            post.comments.forEach(comment => {
+                if (comment.replies && comment.replies.length > 0) {
+                    setupReplyCollapse(comment.id);
+                }
+            });
+        }
     });
     
     restoreCommentStates();
     restoreReactionStates();
 }
-
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
     const input = event.target;
@@ -607,9 +596,10 @@ function addPostToDOM(post) {
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
-
+    
+    // Thêm nội dung post như bình thường
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
-    const commentsHTML = post.comments ? post.comments.map(comment => `
+    const postContent = post.content ? `<p class="post-text">${post.content.replace(/\n/g, '<br>')}</p>` : '';
         <div class="comment" data-comment-id="${comment.id}">
             <img src="${comment.author.avatar}" alt="Avatar" class="comment-avatar">
             <div class="comment-content">
@@ -687,6 +677,7 @@ function addPostToDOM(post) {
             </div>
         </div>
     `).join('') : '';
+    const postContent = post.content ? `<p class="post-text">${post.content.replace(/\n/g, '<br>')}</p>` : '';
 
     postElement.innerHTML = `
         <img src="${post.author.avatar}" alt="Avatar" class="post-avatar">
@@ -717,7 +708,7 @@ function addPostToDOM(post) {
 </div>
                 </div>
             </div>
-            ${post.content ? `<p class="post-text">${post.content}</p>` : ''}
+            ${postContent}
             ${mediaHTML}
     <div class="post-actions">
         <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
@@ -1686,3 +1677,36 @@ function restoreData(event) {
     };
     reader.readAsText(file);
 }
+// ... existing code ...
+
+const style = document.createElement('style');
+style.textContent = `
+    .hidden-post {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    .post-text {
+        white-space: pre-line;
+        word-wrap: break-word;
+        margin: 10px 0;
+    }
+    @keyframes glitch {
+        0% { transform: translate(0) skew(0deg) }
+        20% { transform: translate(-2px, 2px) skew(2deg) }
+        40% { transform: translate(-2px, -2px) skew(-2deg) }
+        60% { transform: translate(2px, 2px) skew(-2deg) }
+        80% { transform: translate(2px, -2px) skew(2deg) }
+        100% { transform: translate(0) skew(0deg) }
+    }
+    @keyframes blink {
+        0% { opacity: 1 }
+        50% { opacity: 0 }
+        100% { opacity: 1 }
+    }
+`;
+document.head.appendChild(style);
