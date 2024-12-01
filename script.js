@@ -393,23 +393,33 @@ function restoreCommentStates() {
 // Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    
-    // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Lọc bỏ posts có @meme và xáo trộn ngẫu nhiên
-    const filteredPosts = posts.filter(post => !post.content?.includes("@meme"));
+    // Lọc posts theo điều kiện
+    const filteredPosts = posts.filter(post => {
+        // Lọc bỏ posts có @meme
+        if (post.content?.includes("@meme")) return false;
+        
+        // Kiểm tra xem có phải là post của LanYouJin không
+        const isLanYouJinPost = post.content?.toLowerCase().includes("@lanyoujin");
+        
+        // Nếu đang ở tab Media, chỉ hiển thị posts của LanYouJin có media
+        const mediaTab = document.querySelector('#media-section.active');
+        if (mediaTab) {
+            return isLanYouJinPost && post.media?.length > 0;
+        }
+        
+        return true; // Hiển thị tất cả posts không có @meme ở tab Timeline
+    });
     
-    // Tạo mảng chỉ số và xáo trộn nó thay vì xáo trộn trực tiếp mảng posts
-    const indices = Array.from({length: filteredPosts.length}, (_, i) => i);
-    for (let i = indices.length - 1; i > 0; i--) {
+    // Xáo trộn mảng posts bằng thuật toán Fisher-Yates
+    for (let i = filteredPosts.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [indices[i], indices[j]] = [indices[j], indices[i]];
+        [filteredPosts[i], filteredPosts[j]] = [filteredPosts[j], filteredPosts[i]];
     }
     
-    // Sử dụng mảng chỉ số đã xáo trộn để thêm posts vào DOM
-    indices.forEach(index => {
-        const post = filteredPosts[index];
+    // Thêm posts vào DOM
+    filteredPosts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
         post.comments?.forEach(comment => {
