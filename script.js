@@ -188,36 +188,40 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
-mediaInput.addEventListener('change', function(e) {
+mediaInput.addEventListener('change', async function(e) {
     const files = Array.from(e.target.files);
-    files.forEach(file => {
-        // Tăng giới hạn kích thước file lên 50MB cho video
-        const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
-        
-        if (file.size > maxSize) {
-            alert(`File quá lớn. Giới hạn: ${maxSize/(1024*1024)}MB`);
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+    
+    for (const file of files) {
+        try {
+            // Tăng giới hạn kích thước file lên 50MB cho video
+            const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
             
-            // Lưu thêm thông tin về file gốc
+            if (file.size > maxSize) {
+                alert(`File ${file.name} quá lớn. Giới hạn: ${maxSize/(1024*1024)}MB`);
+                continue;
+            }
+
+            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+            const mediaUrl = await new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+
             selectedMedia.push({
                 type: mediaType,
-                url: e.target.result,
-                file: file,
+                url: mediaUrl,
                 fileName: file.name,
                 fileSize: file.size,
                 fileType: file.type
             });
-            
-            updateMediaPreview();
-            updatePostButton();
+        } catch (error) {
+            console.error('Lỗi xử lý file:', file.name, error);
         }
-        reader.readAsDataURL(file);
-    });
+    }
+    
+    updateMediaPreview();
+    updatePostButton();
 });
 
     // Update Media Preview
@@ -249,40 +253,42 @@ mediaInput.addEventListener('change', function(e) {
     // Create New Post
 postButton.addEventListener('click', createPost);
 
+// Sửa lại hàm createPost
 async function createPost() {
     const content = postInput.value.trim();
     if (!content && selectedMedia.length === 0) return;
 
-    const processedMedia = selectedMedia.map(media => ({
-        type: media.type,
-        url: media.url,
-        fileName: media.fileName,
-        fileSize: media.fileSize,
-        fileType: media.fileType
-    }));
-    const post = {
-        id: Date.now(),
-        content: content,
-        author: {
-            name: profileName,
-            username: profileUsername,
-            avatar: document.querySelector('.profile-avatar img').src
-        },
-        media: processedMedia,
-        reactions: {
+    try {
+        // Xử lý media trước khi tạo post
+        const processedMedia = await Promise.all(selectedMedia.map(async media => ({
+            type: media.type,
+            url: media.url,
+            fileName: media.fileName,
+            fileSize: media.fileSize,
+            fileType: media.fileType
+        })));
+
+        const post = {
+            id: Date.now(),
+            content: content,
+            author: {
+                name: profileName,
+                username: profileUsername,
+                avatar: document.querySelector('.profile-avatar img').src
+            },
+            media: processedMedia,
             likes: 0,
-            hearts: 0,
-            angry: 0
-        },
-        userReactions: {},
-        comments: [],
-        timestamp: new Date().toISOString()
-    };
+            likes2: 0,
+            likedBy: [],
+            liked2By: [],
+            comments: [],
+            timestamp: new Date().toISOString()
+        };
 
         // Thêm post vào DOM và lưu
         addPostToDOM(post);
         savePost(post);
-    
+
         // Reset form
         postInput.value = '';
         postInput.style.height = 'auto';
@@ -292,11 +298,15 @@ async function createPost() {
         mediaInput.value = '';
         updatePostButton();
         
+        // Cập nhật tab Media
+        updateMediaTab();
+
     } catch (error) {
-        console.error('Lỗi khi tạo bài đăng:', error);
+        console.error('Lỗi chi tiết:', error);
         alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại.');
     }
 }
+
 // Thêm hàm reset form mới này
 function resetPostForm() {
     postInput.value = '';
