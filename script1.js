@@ -617,7 +617,6 @@ function addPostToDOM(post) {
     if (post.content && post.content.includes("@18+")) {
         return;
     }
-
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
@@ -733,7 +732,9 @@ function addPostToDOM(post) {
 
                 </div>
             </div>
-            ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
+            <div class="post-text-container">
+                ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
+            </div>
             ${mediaHTML}
             <div class="post-actions">
         <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
