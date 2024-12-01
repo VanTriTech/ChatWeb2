@@ -329,7 +329,15 @@ function updateMediaPreview() {
 
         // Add post to DOM
         addPostToDOM(post);
-
+// Trong hàm addPostToDOM, thêm điều kiện kiểm tra
+if (media.type === 'twitter-video') {
+    // Kiểm tra xem URL có hợp lệ không
+    if (!isTwitterVideoUrl(media.url)) {
+        console.error('Invalid Twitter video URL');
+        return;
+    }
+    media.embedUrl = getTwitterEmbedUrl(media.url);
+}
         // Save to localStorage
         savePost(post);
 
