@@ -188,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
+// Sửa phần xử lý media input
 mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     files.forEach(file => {
@@ -217,18 +218,19 @@ mediaInput.addEventListener('change', function(e) {
 });
 
     // Update Media Preview
-    function updateMediaPreview() {
-        mediaPreview.innerHTML = selectedMedia.map((media, index) => `
-            <div class="preview-item">
-                ${media.type === 'image' 
-                    ? `<img src="${media.url}" alt="Preview">`
-                    : `<video src="${media.url}" controls></video>`
-                }
-                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-            </div>
-        `).join('');
-        mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
-    }
+function updateMediaPreview() {
+    mediaPreview.innerHTML = selectedMedia.map((media, index) => `
+        <div class="preview-item">
+            ${media.type === 'image' 
+                ? `<img src="${media.url}" alt="Preview">`
+                : `<video src="${media.url}" controls></video>`
+            }
+            <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+        </div>
+    `).join('');
+    mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
+}
+
 
     // Remove Media
     window.removeMedia = function(index) {
@@ -786,37 +788,37 @@ function addPostToDOM(post) {
 
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
-    function generateMediaGrid(mediaItems) {
-        if (!mediaItems.length) return '';
+function generateMediaGrid(mediaItems) {
+    if (!mediaItems.length) return '';
 
-        const imageItems = mediaItems.filter(item => item.type === 'image');
-        const videoItems = mediaItems.filter(item => item.type === 'video');
+    const imageItems = mediaItems.filter(item => item.type === 'image');
+    const videoItems = mediaItems.filter(item => item.type === 'video');
 
-        let gridClass = getMediaGridClass(mediaItems.length);
-        let html = `<div class="post-media ${gridClass}">`;
+    let gridClass = getMediaGridClass(mediaItems.length);
+    let html = `<div class="post-media ${gridClass}">`;
 
-        // Xử lý videos
-        videoItems.forEach(video => {
-            html += `
-                <div class="video-container">
-                    <video src="${video.url}" controls></video>
-                </div>
-            `;
-        });
+    // Xử lý videos
+    videoItems.forEach(video => {
+        html += `
+            <div class="video-container">
+                <video src="${video.url}" controls></video>
+            </div>
+        `;
+    });
+
 
         // Xử lý images
-        imageItems.forEach((image, index) => {
-            html += `
-                <div class="image-container">
-                    <img src="${image.url}" alt="Post image">
-                </div>
-            `;
-        });
+    imageItems.forEach((image, index) => {
+        html += `
+            <div class="image-container">
+                <img src="${image.url}" alt="Post image">
+            </div>
+        `;
+    });
 
-        html += '</div>';
-        return html;
-    }
-
+    html += '</div>';
+    return html;
+}
     function getMediaGridClass(count) {
         if (count === 1) return 'single-image';
         if (count === 2) return 'two-images';
