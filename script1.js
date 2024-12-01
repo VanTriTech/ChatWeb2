@@ -1836,6 +1836,26 @@ window.processTwitterUrl = function() {
         return;
     }
 
+    // Tạo video embed
+    const videoEmbed = `<div class="twitter-video-embed">
+        <iframe 
+            src="https://platform.x.com/embed/Tweet?id=${extractTweetId(url)}"
+            width="100%"
+            height="400"
+            frameborder="0"
+            allowfullscreen>
+        </iframe>
+    </div>`;
+
+    // Lưu embed code để sử dụng khi tạo post
+    window.currentTwitterEmbed = videoEmbed;
+    
+    // Đóng modal
+    closeTwitterModal();
+    
+    // Enable nút đăng bài
+    document.getElementById('post-button').disabled = false;
+}
     // Tạo embed code
     const tweetId = extractTweetId(url);
     const embedCode = `<blockquote class="twitter-tweet" data-conversation="none">
