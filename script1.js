@@ -1715,43 +1715,40 @@ function restoreData(event) {
 function addGitHubVideo() {
     const videoUrl = prompt("Nhập GitHub raw URL của video:");
     if (videoUrl && videoUrl.trim()) {
-        // Log để kiểm tra URL
-        console.log("Video URL:", videoUrl);
+        // Log để kiểm tra
+        console.log("Đang thử load video từ URL:", videoUrl);
         
-        // Kiểm tra URL kỹ hơn
-        if (!videoUrl.includes('raw.githubusercontent.com')) {
-            alert('URL không hợp lệ! URL phải có dạng: https://raw.githubusercontent.com/...');
-            return;
-        }
-
-        // Kiểm tra video có load được không
+        // Tạo video test
         const testVideo = document.createElement('video');
         testVideo.src = videoUrl;
+        
+        // Xử lý khi video load thành công
         testVideo.onloadeddata = () => {
-            // Video load thành công
-            const videoPreview = `
+            console.log("Video loaded successfully!");
+            selectedMedia = [{
+                type: 'video',
+                url: videoUrl
+            }];
+            
+            // Hiển thị preview
+            const mediaPreview = document.querySelector('.media-preview');
+            mediaPreview.innerHTML = `
                 <div class="preview-item video-preview">
-                    <video src="${videoUrl}" controls>
+                    <video src="${videoUrl}" controls preload="metadata">
                         Your browser does not support the video tag.
                     </video>
                     <button class="remove-preview" onclick="removeMedia(0)">×</button>
                 </div>
             `;
-
-            const mediaPreview = document.querySelector('.media-preview');
-            mediaPreview.innerHTML = videoPreview;
             mediaPreview.style.display = 'grid';
-
-            selectedMedia = [{
-                type: 'video',
-                url: videoUrl
-            }];
-
             updatePostButton();
         };
-
-        testVideo.onerror = () => {
-            alert('Không thể load video. Vui lòng kiểm tra lại URL!');
+        
+        // Xử lý lỗi chi tiết
+        testVideo.onerror = (e) => {
+            console.error("Lỗi load video:", testVideo.error);
+            console.error("Error event:", e);
+            alert(`Không thể load video. Lỗi: ${testVideo.error.message}`);
         };
     }
 }
