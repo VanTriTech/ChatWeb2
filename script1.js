@@ -1,4 +1,3 @@
-
 (function() {
     let isLocked = false;
     
@@ -188,106 +187,43 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePostButton();
     });
 
-// Thêm hàm kiểm tra link X.com
-function isTwitterVideoUrl(url) {
-    return url.match(/^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/);
-}
-
-// Thêm hàm chuyển đổi link thường thành link embed
-function getTwitterEmbedUrl(url) {
-    // Lấy ID của tweet từ URL
-    const tweetId = url.split('/status/')[1].split('?')[0];
-    return `https://platform.twitter.com/embed/Tweet.html?id=${tweetId}`;
-}
-
-// Sửa lại phần xử lý media input
-mediaInput.addEventListener('change', function(e) {
-    const files = Array.from(e.target.files);
-    files.forEach(file => {
-        if (file.type.startsWith('image/')) {
-            // Xử lý ảnh như cũ
-            if (file.size > 10 * 1024 * 1024) {
-                alert('File ảnh quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
+    // Media Upload Handler
+    mediaInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
                 return;
             }
+
             const reader = new FileReader();
             reader.onload = function(e) {
+                const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
                 selectedMedia.push({
-                    type: 'image',
-                    url: e.target.result
+                    type: mediaType,
+                    url: e.target.result,
+                    file: file
                 });
                 updateMediaPreview();
                 updatePostButton();
             }
             reader.readAsDataURL(file);
-        } else {
-            // Với video, hiển thị form nhập link X.com
-            showTwitterLinkInput();
-        }
+        });
     });
-});
-// Thêm form nhập link X.com
-function showTwitterLinkInput() {
-    const linkForm = `
-        <div class="twitter-link-form">
-            <input type="text" 
-                   placeholder="Nhập link video từ X.com" 
-                   class="twitter-link-input">
-            <button class="add-twitter-video">Thêm</button>
-        </div>
-    `;
-    
-    // Thêm form vào sau nút upload
-    document.querySelector('.media-upload').insertAdjacentHTML('afterend', linkForm);
-    
-    // Xử lý sự kiện thêm video
-    document.querySelector('.add-twitter-video').addEventListener('click', function() {
-        const linkInput = document.querySelector('.twitter-link-input');
-        const videoUrl = linkInput.value.trim();
-        
-        if (isTwitterVideoUrl(videoUrl)) {
-            selectedMedia.push({
-                type: 'twitter-video',
-                url: videoUrl,
-                embedUrl: getTwitterEmbedUrl(videoUrl)
-            });
-            updateMediaPreview();
-            updatePostButton();
-            
-            // Xóa form sau khi thêm
-            document.querySelector('.twitter-link-form').remove();
-        } else {
-            alert('Vui lòng nhập link video hợp lệ từ X.com');
-        }
-    });
-}
 
-// Cập nhật hàm hiển thị media preview
-function updateMediaPreview() {
-    const mediaPreview = document.querySelector('.media-preview');
-    mediaPreview.innerHTML = selectedMedia.map((media, index) => {
-        if (media.type === 'image') {
-            return `
-                <div class="preview-item">
-                    <img src="${media.url}" alt="Preview">
-                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-                </div>
-            `;
-        } else if (media.type === 'twitter-video') {
-            return `
-                <div class="preview-item twitter-preview">
-                    <iframe src="${media.embedUrl}" 
-                            width="100%" 
-                            height="100%" 
-                            frameborder="0">
-                    </iframe>
-                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-                </div>
-            `;
-        }
-    }).join('');
-    mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
-}
+    // Update Media Preview
+    function updateMediaPreview() {
+        mediaPreview.innerHTML = selectedMedia.map((media, index) => `
+            <div class="preview-item">
+                ${media.type === 'image' 
+                    ? `<img src="${media.url}" alt="Preview">`
+                    : `<video src="${media.url}" controls></video>`
+                }
+                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+            </div>
+        `).join('');
+        mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
+    }
 
     // Remove Media
     window.removeMedia = function(index) {
@@ -304,63 +240,45 @@ function updateMediaPreview() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-// Sửa lại hàm createPost
-async function createPost() {
-    const content = postInput.value.trim();
-    
-    // Kiểm tra nếu không có nội dung và không có media
-    if (!content && (!selectedMedia || selectedMedia.length === 0)) {
-        alert('Vui lòng nhập nội dung hoặc thêm media!');
-        return;
-    }
+    async function createPost() {
+        const content = postInput.value.trim();
+        if (!content && selectedMedia.length === 0) return;
 
-    const postId = Date.now();
-    const post = {
-        id: postId,
-        content: content,
-        author: {
-            name: profileName,
-            username: profileUsername,
-            avatar: document.querySelector('.profile-avatar img').src
-        },
-        media: selectedMedia || [], // Đảm bảo media là một mảng
-        reactions: {
-            likes: 0,
-            hearts: 0,
-            angry: 0
-        },
-        userReactions: {},
-        comments: [],
-        timestamp: new Date().toISOString()
-    };
+        const postId = Date.now();
+        const post = {
+            id: postId,
+            content: content,
+            author: {
+                name: profileName,
+                username: profileUsername,
+                avatar: document.querySelector('.profile-avatar img').src
+            },
+            media: selectedMedia,
+            reactions: {
+                likes: 0,
+                hearts: 0,
+                angry: 0
+            },
+            userReactions: {}, // Lưu reaction của từng user
+            comments: [],
+            timestamp: new Date().toISOString()
+        };
 
-    try {
-        // Thêm bài viết vào DOM
+        // Add post to DOM
         addPostToDOM(post);
-        
-        // Lưu vào localStorage
-        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        posts.unshift(post); // Thêm bài viết mới vào đầu mảng
-        localStorage.setItem('posts', JSON.stringify(posts));
+
+        // Save to localStorage
+        savePost(post);
 
         // Reset form
         postInput.value = '';
         postInput.style.height = 'auto';
         selectedMedia = [];
-        const mediaPreview = document.querySelector('.media-preview');
-        if (mediaPreview) {
-            mediaPreview.style.display = 'none';
-            mediaPreview.innerHTML = '';
-        }
-        if (mediaInput) mediaInput.value = '';
+        mediaPreview.style.display = 'none';
+        mediaPreview.innerHTML = '';
+        mediaInput.value = '';
         updatePostButton();
-
-        alert('Đăng bài thành công!');
-    } catch (error) {
-        console.error('Lỗi khi đăng bài:', error);
-        alert('Có lỗi xảy ra khi đăng bài!');
     }
-}
 
 
     // Initialize Video Players
@@ -473,7 +391,6 @@ function restoreCommentStates() {
 }
 
 // Sửa lại hàm loadPosts
-// Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     postsContainer.innerHTML = '';
@@ -515,7 +432,6 @@ function loadPosts() {
     restoreCommentStates();
     restoreReactionStates();
 }
-
 
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
@@ -708,8 +624,8 @@ let currentImageIndex = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
-    // Kiểm tra nếu nội dung có chứa chính xác "@18+"
-    if (post.content && post.content.includes("@18+")) {
+    // Kiểm tra nếu nội dung có chứa chính xác "@meme"
+    if (post.content && post.content.includes("@meme")) {
         return;
     }
     const postElement = document.createElement('div');
@@ -866,36 +782,37 @@ function addPostToDOM(post) {
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
 function generateMediaGrid(mediaItems) {
-    if (!mediaItems.length) return '';
+        if (!mediaItems.length) return '';
 
-    const gridClass = getMediaGridClass(mediaItems.length);
-    let html = `<div class="post-media ${gridClass}">`;
+        const imageItems = mediaItems.filter(item => item.type === 'image');
+        const videoItems = mediaItems.filter(item => item.type === 'video');
 
-    mediaItems.forEach(media => {
-        if (media.type === 'image') {
-            // Xử lý ảnh như cũ
-            const imageData = encodeURIComponent(JSON.stringify([media]));
+        let gridClass = getMediaGridClass(mediaItems.length);
+        let html = `<div class="post-media ${gridClass}">`;
+
+        // Xử lý videos
+        videoItems.forEach(video => {
             html += `
-                <div class="image-container" onclick="openImageModal('${media.url}', 0, '${imageData}')">
-                    <img src="${media.url}" alt="Post image">
+                <div class="video-container">
+                    <video src="${video.url}" controls></video>
                 </div>
             `;
-        } else if (media.type === 'twitter-video') {
-            // Thêm container cho video X.com
+        });
+
+        // Xử lý tất cả ảnh, không giới hạn số lượng
+        const imageUrls = imageItems.map(img => img.url);
+        imageItems.forEach((image, index) => {
+            const imageData = encodeURIComponent(JSON.stringify(imageUrls));
             html += `
-                <div class="twitter-video-container">
-                    <blockquote class="twitter-tweet">
-                        <a href="${media.url}"></a>
-                    </blockquote>
-                    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+                <div class="image-container" onclick="openImageModal('${image.url}', ${index}, '${imageData}')">
+                    <img src="${image.url}" alt="Post image">
                 </div>
             `;
-        }
-    });
+        });
 
-    html += '</div>';
-    return html;
-}
+        html += '</div>';
+        return html;
+    }
 
     function getMediaGridClass(count) {
         if (count === 1) return 'single-image';
@@ -1796,125 +1713,4 @@ function restoreData(event) {
         }
     };
     reader.readAsText(file);
-}
-// Hàm hiển thị form nhập link video X.com
-function showTwitterVideoInput() {
-    const tweetForm = `
-        <div class="twitter-input-container">
-            <input type="text" 
-                   class="twitter-url-input" 
-                   placeholder="Dán link bài đăng từ X.com có chứa video">
-            <div class="twitter-input-buttons">
-                <button onclick="addTwitterVideo()" class="add-btn">Thêm</button>
-                <button onclick="cancelTwitterInput()" class="cancel-btn">Hủy</button>
-            </div>
-        </div>
-    `;
-    
-    // Thêm form vào sau nút upload
-    document.querySelector('.media-upload').insertAdjacentHTML('afterend', tweetForm);
-}
-
-// Hàm thêm video từ X.com
-function addTwitterVideo() {
-    const input = document.querySelector('.twitter-url-input');
-    const url = input.value.trim();
-    
-    if (!isTwitterVideoUrl(url)) {
-        alert('Link không hợp lệ! Vui lòng nhập link bài đăng từ X.com');
-        return;
-    }
-    
-    // Thêm video vào selectedMedia
-    selectedMedia.push({
-        type: 'twitter-video',
-        url: url
-    });
-    
-    updateMediaPreview();
-    updatePostButton();
-    cancelTwitterInput();
-}
-
-// Hàm hủy nhập link
-function cancelTwitterInput() {
-    const container = document.querySelector('.twitter-input-container');
-    if (container) {
-        container.remove();
-    }
-    // Hiển thị thông báo thành công
-    alert('Đã thêm video thành công!');
-}
-
-// Hàm kiểm tra link X.com
-function isTwitterVideoUrl(url) {
-    return url.match(/^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/);
-}
-
-// Hàm chuyển đổi link thành embed URL
-function getTwitterEmbedUrl(url) {
-    const tweetId = url.split('/status/')[1].split('?')[0];
-    return `https://platform.twitter.com/embed/Tweet.html?id=${tweetId}`;
-}
-// Biến global để lưu media đã chọn
-window.selectedMedia = [];
-
-// Hàm hiển thị form nhập link video X.com
-function showTwitterVideoInput() {
-    const tweetForm = `
-        <div class="twitter-input-container">
-            <input type="text" 
-                   class="twitter-url-input" 
-                   placeholder="Dán link bài đăng từ X.com có chứa video">
-            <div class="twitter-input-buttons">
-                <button onclick="addTwitterVideo()" class="add-btn">Thêm</button>
-                <button onclick="cancelTwitterInput()" class="cancel-btn">Hủy</button>
-            </div>
-        </div>
-    `;
-    
-    // Thêm form vào sau nút upload
-    document.querySelector('.media-upload').insertAdjacentHTML('afterend', tweetForm);
-}
-
-// Hàm thêm video từ X.com
-function addTwitterVideo() {
-    const input = document.querySelector('.twitter-url-input');
-    const url = input.value.trim();
-    
-    if (!url) {
-        alert('Vui lòng nhập link video!');
-        return;
-    }
-    
-    if (!isTwitterVideoUrl(url)) {
-        alert('Link không hợp lệ! Vui lòng nhập link bài đăng từ X.com');
-        return;
-    }
-    
-    // Thêm video vào selectedMedia
-    window.selectedMedia.push({
-        type: 'twitter-video',
-        url: url
-    });
-    
-    // Xóa input và đóng form
-    input.value = '';
-    cancelTwitterInput();
-    
-    // Hiển thị thông báo
-    alert('Đã thêm video thành công!');
-}
-
-// Hàm hủy nhập link
-function cancelTwitterInput() {
-    const container = document.querySelector('.twitter-input-container');
-    if (container) {
-        container.remove();
-    }
-}
-
-// Hàm kiểm tra link X.com
-function isTwitterVideoUrl(url) {
-    return url.match(/^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/);
 }
