@@ -412,8 +412,11 @@ function loadPosts() {
         return true; // Hiển thị tất cả posts không có @18+ ở tab Timeline
     });
     
-    // Sắp xếp theo thời gian mới nhất
-    filteredPosts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    // Xáo trộn mảng posts bằng thuật toán Fisher-Yates
+    for (let i = filteredPosts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [filteredPosts[i], filteredPosts[j]] = [filteredPosts[j], filteredPosts[i]];
+    }
     
     // Thêm posts vào DOM
     filteredPosts.forEach(post => {
