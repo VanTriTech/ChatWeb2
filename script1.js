@@ -187,43 +187,106 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePostButton();
     });
 
-    // Media Upload Handler
-    mediaInput.addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        files.forEach(file => {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
+// Thêm hàm kiểm tra link X.com
+function isTwitterVideoUrl(url) {
+    return url.match(/^https?:\/\/(twitter\.com|x\.com)\/[^\/]+\/status\/\d+/);
+}
+
+// Thêm hàm chuyển đổi link thường thành link embed
+function getTwitterEmbedUrl(url) {
+    // Lấy ID của tweet từ URL
+    const tweetId = url.split('/status/')[1].split('?')[0];
+    return `https://platform.twitter.com/embed/Tweet.html?id=${tweetId}`;
+}
+
+// Sửa lại phần xử lý media input
+mediaInput.addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+        if (file.type.startsWith('image/')) {
+            // Xử lý ảnh như cũ
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File ảnh quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
                 return;
             }
-
             const reader = new FileReader();
             reader.onload = function(e) {
-                const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
                 selectedMedia.push({
-                    type: mediaType,
-                    url: e.target.result,
-                    file: file
+                    type: 'image',
+                    url: e.target.result
                 });
                 updateMediaPreview();
                 updatePostButton();
             }
             reader.readAsDataURL(file);
-        });
+        } else {
+            // Với video, hiển thị form nhập link X.com
+            showTwitterLinkInput();
+        }
     });
+});
+// Thêm form nhập link X.com
+function showTwitterLinkInput() {
+    const linkForm = `
+        <div class="twitter-link-form">
+            <input type="text" 
+                   placeholder="Nhập link video từ X.com" 
+                   class="twitter-link-input">
+            <button class="add-twitter-video">Thêm</button>
+        </div>
+    `;
+    
+    // Thêm form vào sau nút upload
+    document.querySelector('.media-upload').insertAdjacentHTML('afterend', linkForm);
+    
+    // Xử lý sự kiện thêm video
+    document.querySelector('.add-twitter-video').addEventListener('click', function() {
+        const linkInput = document.querySelector('.twitter-link-input');
+        const videoUrl = linkInput.value.trim();
+        
+        if (isTwitterVideoUrl(videoUrl)) {
+            selectedMedia.push({
+                type: 'twitter-video',
+                url: videoUrl,
+                embedUrl: getTwitterEmbedUrl(videoUrl)
+            });
+            updateMediaPreview();
+            updatePostButton();
+            
+            // Xóa form sau khi thêm
+            document.querySelector('.twitter-link-form').remove();
+        } else {
+            alert('Vui lòng nhập link video hợp lệ từ X.com');
+        }
+    });
+}
 
-    // Update Media Preview
-    function updateMediaPreview() {
-        mediaPreview.innerHTML = selectedMedia.map((media, index) => `
-            <div class="preview-item">
-                ${media.type === 'image' 
-                    ? `<img src="${media.url}" alt="Preview">`
-                    : `<video src="${media.url}" controls></video>`
-                }
-                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-            </div>
-        `).join('');
-        mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
-    }
+// Cập nhật hàm hiển thị media preview
+function updateMediaPreview() {
+    const mediaPreview = document.querySelector('.media-preview');
+    mediaPreview.innerHTML = selectedMedia.map((media, index) => {
+        if (media.type === 'image') {
+            return `
+                <div class="preview-item">
+                    <img src="${media.url}" alt="Preview">
+                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+                </div>
+            `;
+        } else if (media.type === 'twitter-video') {
+            return `
+                <div class="preview-item twitter-preview">
+                    <iframe src="${media.embedUrl}" 
+                            width="100%" 
+                            height="100%" 
+                            frameborder="0">
+                    </iframe>
+                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+                </div>
+            `;
+        }
+    }).join('');
+    mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
+}
 
     // Remove Media
     window.removeMedia = function(index) {
