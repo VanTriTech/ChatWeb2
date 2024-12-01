@@ -304,53 +304,63 @@ function updateMediaPreview() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-    async function createPost() {
-        const content = postInput.value.trim();
-        if (!content && selectedMedia.length === 0) return;
-
-        const postId = Date.now();
-        const post = {
-            id: postId,
-            content: content,
-            author: {
-                name: profileName,
-                username: profileUsername,
-                avatar: document.querySelector('.profile-avatar img').src
-            },
-            media: selectedMedia,
-            reactions: {
-                likes: 0,
-                hearts: 0,
-                angry: 0
-            },
-            userReactions: {}, // Lưu reaction của từng user
-            comments: [],
-            timestamp: new Date().toISOString()
-        };
-
-        // Add post to DOM
-        addPostToDOM(post);
-// Trong hàm addPostToDOM, thêm điều kiện kiểm tra
-if (media.type === 'twitter-video') {
-    // Kiểm tra xem URL có hợp lệ không
-    if (!isTwitterVideoUrl(media.url)) {
-        console.error('Invalid Twitter video URL');
+// Sửa lại hàm createPost
+async function createPost() {
+    const content = postInput.value.trim();
+    
+    // Kiểm tra nếu không có nội dung và không có media
+    if (!content && (!selectedMedia || selectedMedia.length === 0)) {
+        alert('Vui lòng nhập nội dung hoặc thêm media!');
         return;
     }
-    media.embedUrl = getTwitterEmbedUrl(media.url);
-}
-        // Save to localStorage
-        savePost(post);
+
+    const postId = Date.now();
+    const post = {
+        id: postId,
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: selectedMedia || [], // Đảm bảo media là một mảng
+        reactions: {
+            likes: 0,
+            hearts: 0,
+            angry: 0
+        },
+        userReactions: {},
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
+
+    try {
+        // Thêm bài viết vào DOM
+        addPostToDOM(post);
+        
+        // Lưu vào localStorage
+        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+        posts.unshift(post); // Thêm bài viết mới vào đầu mảng
+        localStorage.setItem('posts', JSON.stringify(posts));
 
         // Reset form
         postInput.value = '';
         postInput.style.height = 'auto';
         selectedMedia = [];
-        mediaPreview.style.display = 'none';
-        mediaPreview.innerHTML = '';
-        mediaInput.value = '';
+        const mediaPreview = document.querySelector('.media-preview');
+        if (mediaPreview) {
+            mediaPreview.style.display = 'none';
+            mediaPreview.innerHTML = '';
+        }
+        if (mediaInput) mediaInput.value = '';
         updatePostButton();
+
+        alert('Đăng bài thành công!');
+    } catch (error) {
+        console.error('Lỗi khi đăng bài:', error);
+        alert('Có lỗi xảy ra khi đăng bài!');
     }
+}
 
 
     // Initialize Video Players
