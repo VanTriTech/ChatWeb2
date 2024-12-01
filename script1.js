@@ -1713,29 +1713,29 @@ function restoreData(event) {
     reader.readAsText(file);
 }
 function addGitHubVideo() {
-    const videoUrl = prompt("Nhập URL của video:", "https://vantritech.github.io/ChatWeb2/video1.mp4");
-    if (videoUrl && videoUrl.trim()) {
-        // Tạo video preview
-        const videoPreview = `
-            <div class="preview-item video-preview">
-                <video src="${videoUrl}" controls>
-                    Your browser does not support the video tag.
-                </video>
-                <button class="remove-preview" onclick="removeMedia(${selectedMedia.length})">×</button>
-            </div>
-        `;
+    // Sử dụng URL video đã hoạt động
+    const videoUrl = "https://vantritech.github.io/ChatWeb2/video/video1.mp4";
+    
+    // Tạo video preview
+    const videoPreview = `
+        <div class="preview-item video-preview">
+            <video src="${videoUrl}" controls preload="metadata">
+                Your browser does not support the video tag.
+            </video>
+            <button class="remove-preview" onclick="removeMedia(${selectedMedia.length})">×</button>
+        </div>
+    `;
 
-        // Hiển thị preview
-        const mediaPreview = document.querySelector('.media-preview');
-        mediaPreview.innerHTML = videoPreview;
-        mediaPreview.style.display = 'grid';
+    // Hiển thị preview
+    const mediaPreview = document.querySelector('.media-preview');
+    mediaPreview.innerHTML = videoPreview;
+    mediaPreview.style.display = 'grid';
 
-        // Lưu thông tin video
-        selectedMedia = [{
-            type: 'video',
-            url: videoUrl
-        }];
+    // Lưu thông tin video
+    selectedMedia = [{
+        type: 'video',
+        url: videoUrl
+    }];
 
-        updatePostButton();
-    }
+    updatePostButton();
 }
