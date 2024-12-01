@@ -397,8 +397,8 @@ function loadPosts() {
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Lọc bỏ posts có @meme và xáo trộn ngẫu nhiên
-    const filteredPosts = posts.filter(post => !post.content?.includes("@meme"));
+    // Lọc bỏ posts có @18+ và xáo trộn ngẫu nhiên
+    const filteredPosts = posts.filter(post => !post.content?.includes("@18+"));
     
     // Tạo mảng chỉ số và xáo trộn nó thay vì xáo trộn trực tiếp mảng posts
     const indices = Array.from({length: filteredPosts.length}, (_, i) => i);
@@ -614,8 +614,8 @@ let currentImageIndex = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
-    // Kiểm tra nếu nội dung có chứa chính xác "@meme"
-    if (post.content && post.content.includes("@meme")) {
+    // Kiểm tra nếu nội dung có chứa chính xác "@18+"
+    if (post.content && post.content.includes("@18+")) {
         return;
     }
     const postElement = document.createElement('div');
