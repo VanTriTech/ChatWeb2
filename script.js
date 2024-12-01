@@ -188,28 +188,37 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
-    mediaInput.addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        files.forEach(file => {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
-                return;
-            }
+mediaInput.addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+        // Tăng giới hạn kích thước file lên 50MB cho video
+        const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+        
+        if (file.size > maxSize) {
+            alert(`File quá lớn. Giới hạn: ${maxSize/(1024*1024)}MB`);
+            return;
+        }
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-                selectedMedia.push({
-                    type: mediaType,
-                    url: e.target.result,
-                    file: file
-                });
-                updateMediaPreview();
-                updatePostButton();
-            }
-            reader.readAsDataURL(file);
-        });
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+            
+            // Lưu thêm thông tin về file gốc
+            selectedMedia.push({
+                type: mediaType,
+                url: e.target.result,
+                file: file,
+                fileName: file.name,
+                fileSize: file.size,
+                fileType: file.type
+            });
+            
+            updateMediaPreview();
+            updatePostButton();
+        }
+        reader.readAsDataURL(file);
     });
+});
 
     // Update Media Preview
     function updateMediaPreview() {
@@ -238,38 +247,42 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Create New Post
-    postButton.addEventListener('click', createPost);
+postButton.addEventListener('click', createPost);
 
-    async function createPost() {
-        const content = postInput.value.trim();
-        if (!content && selectedMedia.length === 0) return;
+async function createPost() {
+    const content = postInput.value.trim();
+    if (!content && selectedMedia.length === 0) return;
 
-        const postId = Date.now();
-        const post = {
-            id: postId,
-            content: content,
-            author: {
-                name: profileName,
-                username: profileUsername,
-                avatar: document.querySelector('.profile-avatar img').src
-            },
-            media: selectedMedia,
-            reactions: {
-                likes: 0,
-                hearts: 0,
-                angry: 0
-            },
-            userReactions: {}, // Lưu reaction của từng user
-            comments: [],
-            timestamp: new Date().toISOString()
-        };
+    const processedMedia = selectedMedia.map(media => ({
+        type: media.type,
+        url: media.url,
+        fileName: media.fileName,
+        fileSize: media.fileSize,
+        fileType: media.fileType
+    }));
+    const post = {
+        id: Date.now(),
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: processedMedia,
+        reactions: {
+            likes: 0,
+            hearts: 0,
+            angry: 0
+        },
+        userReactions: {},
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
 
-        // Add post to DOM
+        // Thêm post vào DOM và lưu
         addPostToDOM(post);
-
-        // Save to localStorage
         savePost(post);
-
+    
         // Reset form
         postInput.value = '';
         postInput.style.height = 'auto';
@@ -278,9 +291,22 @@ document.addEventListener('DOMContentLoaded', function() {
         mediaPreview.innerHTML = '';
         mediaInput.value = '';
         updatePostButton();
+        
+    } catch (error) {
+        console.error('Lỗi khi tạo bài đăng:', error);
+        alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại.');
     }
-
-
+}
+// Thêm hàm reset form mới này
+function resetPostForm() {
+    postInput.value = '';
+    postInput.style.height = 'auto';
+    selectedMedia = [];
+    mediaPreview.style.display = 'none';
+    mediaPreview.innerHTML = '';
+    mediaInput.value = '';
+    updatePostButton();
+}
     // Initialize Video Players
     function initializeVideoPlayers() {
         const videos = document.querySelectorAll('.video-player');
@@ -397,8 +423,8 @@ function loadPosts() {
     
     // Lọc posts theo điều kiện
     const filteredPosts = posts.filter(post => {
-        // Lọc bỏ posts có @meme
-        if (post.content?.includes("@meme")) return false;
+        // Lọc bỏ posts có @18+
+        if (post.content?.includes("@18+")) return false;
         
         // Kiểm tra xem có phải là post của LanYouJin không
         const isLanYouJinPost = post.content?.toLowerCase().includes("@lanyoujin");
@@ -409,7 +435,7 @@ function loadPosts() {
             return isLanYouJinPost && post.media?.length > 0;
         }
         
-        return true; // Hiển thị tất cả posts không có @meme ở tab Timeline
+        return true; // Hiển thị tất cả posts không có @18+ ở tab Timeline
     });
     
     // Xáo trộn mảng posts bằng thuật toán Fisher-Yates
@@ -624,8 +650,8 @@ let currentImageIndex = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
-    // Kiểm tra nếu nội dung có chứa chính xác "@meme"
-    if (post.content && post.content.includes("@meme")) {
+    // Kiểm tra nếu nội dung có chứa chính xác "@18+"
+    if (post.content && post.content.includes("@18+")) {
         return;
     }
     const postElement = document.createElement('div');
@@ -782,22 +808,26 @@ function addPostToDOM(post) {
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
 function generateMediaGrid(mediaItems) {
-        if (!mediaItems.length) return '';
+    if (!mediaItems.length) return '';
 
-        const imageItems = mediaItems.filter(item => item.type === 'image');
-        const videoItems = mediaItems.filter(item => item.type === 'video');
+    const imageItems = mediaItems.filter(item => item.type === 'image');
+    const videoItems = mediaItems.filter(item => item.type === 'video');
 
         let gridClass = getMediaGridClass(mediaItems.length);
         let html = `<div class="post-media ${gridClass}">`;
 
         // Xử lý videos
-        videoItems.forEach(video => {
-            html += `
-                <div class="video-container">
-                    <video src="${video.url}" controls></video>
-                </div>
-            `;
-        });
+    videoItems.forEach(video => {
+        html += `
+            <div class="video-container" style="aspect-ratio: 1/1; overflow: hidden;">
+                <video src="${video.url}" 
+                       controls
+                       style="width: 100%; height: 100%; object-fit: cover;">
+                </video>
+            </div>
+        `;
+    });
+
 
         // Xử lý tất cả ảnh, không giới hạn số lượng
         const imageUrls = imageItems.map(img => img.url);
