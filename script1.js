@@ -780,37 +780,36 @@ function addPostToDOM(post) {
 }
 
 
-// Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
-    function generateMediaGrid(mediaItems) {
-        if (!mediaItems.length) return '';
+function generateMediaGrid(mediaItems) {
+    if (!mediaItems.length) return '';
 
-        const imageItems = mediaItems.filter(item => item.type === 'image');
-        const videoItems = mediaItems.filter(item => item.type === 'video');
+    const imageItems = mediaItems.filter(item => item.type === 'image');
+    const videoItems = mediaItems.filter(item => item.type === 'video');
 
-        let gridClass = getMediaGridClass(mediaItems.length);
-        let html = `<div class="post-media ${gridClass}">`;
+    let gridClass = getMediaGridClass(mediaItems.length);
+    let html = `<div class="post-media ${gridClass}">`;
 
-        // Xử lý videos
-        videoItems.forEach(video => {
-            html += `
-                <div class="video-container">
-                    <video src="${video.url}" controls></video>
-                </div>
-            `;
-        });
+    // Xử lý videos
+    videoItems.forEach(video => {
+        html += `
+            <div class="video-container">
+                <video src="${video.url}" controls style="max-width: 100%; height: auto;"></video>
+            </div>
+        `;
+    });
 
-        // Xử lý images
-        imageItems.forEach((image, index) => {
-            html += `
-                <div class="image-container">
-                    <img src="${image.url}" alt="Post image">
-                </div>
-            `;
-        });
+    // Xử lý images
+    imageItems.forEach((image, index) => {
+        html += `
+            <div class="image-container">
+                <img src="${image.url}" alt="Post image">
+            </div>
+        `;
+    });
 
-        html += '</div>';
-        return html;
-    }
+    html += '</div>';
+    return html;
+}
 
     function getMediaGridClass(count) {
         if (count === 1) return 'single-image';
