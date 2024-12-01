@@ -608,6 +608,8 @@ function addPostToDOM(post) {
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
+    // Xử lý nội dung để giữ nguyên xuống dòng
+    const formattedContent = post.content ? post.content.replace(/\n/g, '<br>') : '';
 
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
     const commentsHTML = post.comments ? post.comments.map(comment => `
@@ -718,7 +720,7 @@ function addPostToDOM(post) {
 </div>
                 </div>
             </div>
-            ${post.content ? `<p class="post-text">${post.content}</p>` : ''}
+            ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
             ${mediaHTML}
     <div class="post-actions">
         <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
