@@ -1733,3 +1733,22 @@ body {
     min-height: 400px;
     border: none;
 }
+.twitter-preview {
+    background: #1da1f2;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.twitter-embed-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.twitter-embed-preview::before {
+    content: '\f099';
+    font-family: 'Font Awesome 5 Brands';
+    font-size: 1.2em;
+}
