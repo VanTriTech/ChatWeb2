@@ -283,9 +283,11 @@ body {
 
 /* Post Media Styles */
 .post-media {
+    width: 100%;
+    max-width: 100%;
     margin: 0;
     padding: 0;
-    line-height: 0;
+    overflow: hidden;
 }
 
 /* Single image */
@@ -467,7 +469,9 @@ body {
     background-color: rgba(255, 255, 255, 0.03);
 }
 .post-content {
-    line-height: normal;
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
 }
 
 .post-header {
@@ -1813,17 +1817,18 @@ body {
 /* Điều chỉnh style cho video container */
 .post-media .video-container {
     width: 100%;
-    max-width: 800px; /* Tăng kích thước tối đa */
+    max-width: 100%; /* Đảm bảo không tràn khung */
     margin: 0 auto;
     border-radius: 12px;
     overflow: hidden;
     background: #000;
-    line-height: 0; /* Loại bỏ khoảng trống dưới video */
+    line-height: 0;
 }
 
 .post-media .video-container video {
     width: 100%;
     height: auto;
-    display: block; /* Loại bỏ khoảng trống mặc định */
-    object-fit: cover;
+    display: block;
+    object-fit: contain; /* Đảm bảo video hiển thị đúng tỷ lệ */
+    max-height: 80vh; /* Giới hạn chiều cao tối đa */
 }
