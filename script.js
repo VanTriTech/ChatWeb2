@@ -188,42 +188,74 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
-    mediaInput.addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        files.forEach(file => {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
-                return;
-            }
+// Hàm xử lý khi chọn video
+mediaInput.addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+        if (file.size > 50 * 1024 * 1024) { // Giới hạn 50MB
+            alert('Video quá lớn. Vui lòng chọn video nhỏ hơn 50MB');
+            return;
+        }
 
+        if (file.type.startsWith('video/')) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+                // Tạo video element để kiểm tra
+                const video = document.createElement('video');
+                video.src = e.target.result;
+                video.onloadedmetadata = function() {
+                    selectedMedia.push({
+                        type: 'video',
+                        url: e.target.result,
+                        file: file
+                    });
+                    updateMediaPreview();
+                    updatePostButton();
+                };
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type.startsWith('image/')) {
+            // Xử lý ảnh như cũ
+            const reader = new FileReader();
+            reader.onload = function(e) {
                 selectedMedia.push({
-                    type: mediaType,
+                    type: 'image',
                     url: e.target.result,
                     file: file
                 });
                 updateMediaPreview();
                 updatePostButton();
-            }
+            };
             reader.readAsDataURL(file);
-        });
+        }
     });
+});
+
 
     // Update Media Preview
-    function updateMediaPreview() {
-        mediaPreview.innerHTML = selectedMedia.map((media, index) => `
-            <div class="preview-item">
-                ${media.type === 'image' 
-                    ? `<img src="${media.url}" alt="Preview">`
-                    : `<video src="${media.url}" controls></video>`
-                }
-                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-            </div>
-        `).join('');
-        mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
-    }
+function updateMediaPreview() {
+    mediaPreview.innerHTML = selectedMedia.map((media, index) => {
+        if (media.type === 'video') {
+            return `
+                <div class="preview-item video-preview">
+                    <video src="${media.url}" controls preload="metadata">
+                        Your browser does not support the video tag.
+                    </video>
+                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="preview-item">
+                    <img src="${media.url}" alt="Preview">
+                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+                </div>
+            `;
+        }
+    }).join('');
+    mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
+}
+
 
     // Remove Media
     window.removeMedia = function(index) {
@@ -784,31 +816,29 @@ function addPostToDOM(post) {
 function generateMediaGrid(mediaItems) {
     if (!mediaItems || !mediaItems.length) return '';
 
-    const imageItems = mediaItems.filter(item => item.type === 'image');
-    const videoItems = mediaItems.filter(item => item.type === 'video');
+    const gridClass = mediaItems.length === 1 ? 'single-media' : 
+                     mediaItems.length === 2 ? 'two-media' :
+                     mediaItems.length === 3 ? 'three-media' : 'four-media';
 
-    let gridClass = getMediaGridClass(mediaItems.length);
     let html = `<div class="post-media ${gridClass}">`;
-
-    // Xử lý videos trước
-    videoItems.forEach(video => {
-        html += `
-            <div class="video-container">
-                <video controls preload="metadata" playsinline>
-                    <source src="${video.url}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-        `;
-    });
-
-        // Xử lý images
-    imageItems.forEach((image, index) => {
-        html += `
-            <div class="image-container">
-                <img src="${image.url}" alt="Post image" loading="lazy">
-            </div>
-        `;
+    
+    mediaItems.forEach((media, index) => {
+        if (media.type === 'video') {
+            html += `
+                <div class="video-container">
+                    <video controls preload="metadata" playsinline>
+                        <source src="${media.url}" type="video/mp4">
+                        Your browser does not support video playback.
+                    </video>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="image-container">
+                    <img src="${media.url}" alt="Post image ${index + 1}" loading="lazy">
+                </div>
+            `;
+        }
     });
 
     html += '</div>';
