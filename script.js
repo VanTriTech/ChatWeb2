@@ -188,37 +188,14 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
-// Sửa phần xử lý media input
-// Sửa phần xử lý media input để hỗ trợ MKV
-mediaInput.addEventListener('change', function(e) {
-    const files = Array.from(e.target.files);
-    files.forEach(file => {
-        const maxSize = 100 * 1024 * 1024; // 100MB
-        if (file.size > maxSize) {
-            alert('File quá lớn. Vui lòng chọn file nhỏ hơn 100MB.');
-            return;
-        }
+    mediaInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
+                return;
+            }
 
-        // Kiểm tra và xử lý file MKV
-        if (file.name.toLowerCase().endsWith('.mkv')) {
-            // Chuyển đổi MKV sang định dạng có thể phát được trên web
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const videoBlob = new Blob([e.target.result], { type: 'video/x-matroska' });
-                const videoUrl = URL.createObjectURL(videoBlob);
-                
-                selectedMedia.push({
-                    type: 'video',
-                    url: videoUrl,
-                    file: file,
-                    originalName: file.name
-                });
-                updateMediaPreview();
-                updatePostButton();
-            };
-            reader.readAsArrayBuffer(file);
-        } else {
-            // Xử lý các file khác như cũ
             const reader = new FileReader();
             reader.onload = function(e) {
                 const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
@@ -231,24 +208,22 @@ mediaInput.addEventListener('change', function(e) {
                 updatePostButton();
             }
             reader.readAsDataURL(file);
-        }
+        });
     });
-});
 
     // Update Media Preview
-function updateMediaPreview() {
-    mediaPreview.innerHTML = selectedMedia.map((media, index) => `
-        <div class="preview-item">
-            ${media.type === 'image' 
-                ? `<img src="${media.url}" alt="Preview">`
-                : `<video src="${media.url}" controls></video>`
-            }
-            <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-        </div>
-    `).join('');
-    mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
-}
-
+    function updateMediaPreview() {
+        mediaPreview.innerHTML = selectedMedia.map((media, index) => `
+            <div class="preview-item">
+                ${media.type === 'image' 
+                    ? `<img src="${media.url}" alt="Preview">`
+                    : `<video src="${media.url}" controls></video>`
+                }
+                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+            </div>
+        `).join('');
+        mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
+    }
 
     // Remove Media
     window.removeMedia = function(index) {
@@ -806,33 +781,37 @@ function addPostToDOM(post) {
 
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
-function generateMediaGrid(mediaItems) {
-    if (!mediaItems.length) return '';
-    
-    let html = '';
-    
-    // Xử lý video riêng
-    mediaItems.forEach(media => {
-        if (media.type === 'video') {
+    function generateMediaGrid(mediaItems) {
+        if (!mediaItems.length) return '';
+
+        const imageItems = mediaItems.filter(item => item.type === 'image');
+        const videoItems = mediaItems.filter(item => item.type === 'video');
+
+        let gridClass = getMediaGridClass(mediaItems.length);
+        let html = `<div class="post-media ${gridClass}">`;
+
+        // Xử lý videos
+        videoItems.forEach(video => {
             html += `
-                <div class="post-video-frame">
-                    <video controls>
-                        <source src="${media.url}" type="video/mp4">
-                        <source src="${media.url}" type="video/webm">
-                        Your browser does not support the video tag.
-                    </video>
+                <div class="video-container">
+                    <video src="${video.url}" controls></video>
                 </div>
             `;
-        } else if (media.type === 'image') {
-            // Xử lý ảnh như bình thường
-            html += `<div class="image-container">
-                <img src="${media.url}" alt="Post image">
-            </div>`;
-        }
-    });
-    
-    return html;
-}
+        });
+
+        // Xử lý images
+        imageItems.forEach((image, index) => {
+            html += `
+                <div class="image-container">
+                    <img src="${image.url}" alt="Post image">
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        return html;
+    }
+
     function getMediaGridClass(count) {
         if (count === 1) return 'single-image';
         if (count === 2) return 'two-images';
@@ -1734,59 +1713,45 @@ function restoreData(event) {
     reader.readAsText(file);
 }
 function addGitHubVideo() {
-    // Sử dụng URL video đã hoạt động
-    const videoUrl = "https://vantritech.github.io/ChatWeb2/video/video1.mp4";
-    
-    // Tạo video preview
-    const videoPreview = `
-        <div class="preview-item video-preview">
-            <video src="${videoUrl}" controls preload="metadata">
-                Your browser does not support the video tag.
-            </video>
-            <button class="remove-preview" onclick="removeMedia(${selectedMedia.length})">×</button>
-        </div>
-    `;
-
-    // Hiển thị preview
-    const mediaPreview = document.querySelector('.media-preview');
-    mediaPreview.innerHTML = videoPreview;
-    mediaPreview.style.display = 'grid';
-
-    // Lưu thông tin video
-    selectedMedia = [{
-        type: 'video',
-        url: videoUrl
-    }];
-
-    updatePostButton();
-}
-// Thêm .mkv vào accept attribute của input
-const mediaInput = document.getElementById('media-input');
-mediaInput.setAttribute('accept', 'image/*,video/*,.mkv');
-// Thêm hàm để lưu video vào localStorage an toàn
-function saveVideoToLocalStorage(videoData) {
-    try {
-        // Chuyển đổi Blob URL thành base64 nếu cần
-        if (videoData.url.startsWith('blob:')) {
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', videoData.url, true);
-            xhr.responseType = 'blob';
-            xhr.onload = function() {
-                if (xhr.status === 200) {
-                    const reader = new FileReader();
-                    reader.onloadend = function() {
-                        videoData.url = reader.result;
-                        // Lưu vào localStorage
-                        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-                        posts.unshift(videoData);
-                        localStorage.setItem('posts', JSON.stringify(posts));
-                    };
-                    reader.readAsDataURL(xhr.response);
-                }
-            };
-            xhr.send();
+    const videoUrl = prompt("Nhập GitHub raw URL của video:");
+    if (videoUrl && videoUrl.trim()) {
+        // Log để kiểm tra URL
+        console.log("Video URL:", videoUrl);
+        
+        // Kiểm tra URL kỹ hơn
+        if (!videoUrl.includes('raw.githubusercontent.com')) {
+            alert('URL không hợp lệ! URL phải có dạng: https://raw.githubusercontent.com/...');
+            return;
         }
-    } catch (error) {
-        console.error('Lỗi khi lưu video:', error);
+
+        // Kiểm tra video có load được không
+        const testVideo = document.createElement('video');
+        testVideo.src = videoUrl;
+        testVideo.onloadeddata = () => {
+            // Video load thành công
+            const videoPreview = `
+                <div class="preview-item video-preview">
+                    <video src="${videoUrl}" controls>
+                        Your browser does not support the video tag.
+                    </video>
+                    <button class="remove-preview" onclick="removeMedia(0)">×</button>
+                </div>
+            `;
+
+            const mediaPreview = document.querySelector('.media-preview');
+            mediaPreview.innerHTML = videoPreview;
+            mediaPreview.style.display = 'grid';
+
+            selectedMedia = [{
+                type: 'video',
+                url: videoUrl
+            }];
+
+            updatePostButton();
+        };
+
+        testVideo.onerror = () => {
+            alert('Không thể load video. Vui lòng kiểm tra lại URL!');
+        };
     }
 }
