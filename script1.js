@@ -730,7 +730,6 @@ function addPostToDOM(post) {
         Xóa
     </div>
 </div>
-            ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
 
                 </div>
             </div>
