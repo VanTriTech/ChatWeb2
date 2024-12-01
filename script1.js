@@ -327,17 +327,6 @@ function resetPostForm() {
     mediaInput.value = '';
     updatePostButton();
 }
-
-// Thêm hàm reset form mới này
-function resetPostForm() {
-    postInput.value = '';
-    postInput.style.height = 'auto';
-    selectedMedia = [];
-    mediaPreview.style.display = 'none';
-    mediaPreview.innerHTML = '';
-    mediaInput.value = '';
-    updatePostButton();
-}
     // Initialize Video Players
     function initializeVideoPlayers() {
         const videos = document.querySelectorAll('.video-player');
