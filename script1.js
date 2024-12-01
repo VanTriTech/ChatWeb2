@@ -808,38 +808,29 @@ function addPostToDOM(post) {
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
 function generateMediaGrid(mediaItems) {
     if (!mediaItems.length) return '';
-
-    const imageItems = mediaItems.filter(item => item.type === 'image');
-    const videoItems = mediaItems.filter(item => item.type === 'video');
-
-    let gridClass = getMediaGridClass(mediaItems.length);
-    let html = `<div class="post-media ${gridClass}">`;
-
-    // Xử lý videos - đặt trong post-media
-    videoItems.forEach(video => {
-        html += `
-            <div class="video-container">
-                <video controls style="width: 100%; max-width: 400px; max-height: 300px;">
-                    <source src="${video.url}" type="video/x-matroska">
-                    <source src="${video.url}" type="video/mp4">
-                    <source src="${video.url}" type="video/webm">
-                    Your browser does not support the video tag.
-                </video>
-            </div>
-        `;
+    
+    let html = '';
+    
+    // Xử lý video riêng
+    mediaItems.forEach(media => {
+        if (media.type === 'video') {
+            html += `
+                <div class="post-video-frame">
+                    <video controls>
+                        <source src="${media.url}" type="video/mp4">
+                        <source src="${media.url}" type="video/webm">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            `;
+        } else if (media.type === 'image') {
+            // Xử lý ảnh như bình thường
+            html += `<div class="image-container">
+                <img src="${media.url}" alt="Post image">
+            </div>`;
+        }
     });
-
-
-        // Xử lý images
-    imageItems.forEach(image => {
-        html += `
-            <div class="image-container">
-                <img src="${image.url}" alt="Post image">
-            </div>
-        `;
-    });
-
-    html += '</div>';
+    
     return html;
 }
     function getMediaGridClass(count) {
