@@ -1,3 +1,5 @@
+Lỗi cũ, video đúng là đăng lên được, nhưng nút đăng bài không ấn vào được. Phần bài đăng cũng không ấn vào được phần menu(phần chỉnh sửa, xóa của mỗi bài đăng) không phải nút đăng, nút 3 chấm bị vô hiệu, nó không ấn vào được, cứ như bị lag hoặc có gì đó che lại không ấn được
+Sau 1 lúc, video lỗi
 (function() {
     let isLocked = false;
     
@@ -144,34 +146,7 @@
         }
     }, 100);
 })();
-// Sửa lại phần xử lý sự kiện click cho menu và nút đăng
 document.addEventListener('DOMContentLoaded', function() {
-    // Ngăn chặn sự kiện click lan truyền
-    document.addEventListener('click', function(e) {
-        const target = e.target;
-        
-        // Xử lý menu post
-        if (target.closest('.post-menu-button')) {
-            e.stopPropagation();
-            const postId = target.closest('.post').dataset.postId;
-            togglePostMenu(postId);
-        }
-        
-        // Xử lý nút đăng
-        if (target.id === 'post-button' && !target.disabled) {
-            e.stopPropagation(); 
-            createPost();
-        }
-    }, true); // Thêm capture phase
-    
-    // Đóng menu khi click ra ngoài
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.post-menu')) {
-            document.querySelectorAll('.post-menu-dropdown.active')
-                .forEach(menu => menu.classList.remove('active'));
-        }
-    });
-});
     // DOM Elements
     const postInput = document.getElementById('post-input');
     const postButton = document.getElementById('post-button');
@@ -229,34 +204,35 @@ mediaInput.addEventListener('change', function(e) {
         }
 
         // Xử lý video
-function handleVideoUpload(file) {
-    return new Promise((resolve, reject) => {
-        // Tạo URL tạm thời cho video
-        const videoURL = URL.createObjectURL(file);
-        
-        // Tạo video element để lấy metadata
-        const video = document.createElement('video');
-        video.preload = 'metadata';
-        
-        video.onloadedmetadata = function() {
-            resolve({
-                type: 'video',
-                url: videoURL,
-                file: file,
-                duration: video.duration,
-                width: video.videoWidth,
-                height: video.videoHeight
-            });
-        };
-        
-        video.onerror = function() {
-            URL.revokeObjectURL(videoURL);
-            reject(new Error('Không thể tải video'));
-        };
-        
-        video.src = videoURL;
-    });
-}
+        if (file.type.startsWith('video/')) {
+            // Chuyển video thành base64 để lưu trữ
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const videoData = e.target.result; // Dữ liệu base64
+                
+                // Tạo video element để lấy metadata
+                const video = document.createElement('video');
+                video.src = videoData;
+                
+                video.onloadedmetadata = function() {
+                    selectedMedia.push({
+                        type: 'video',
+                        url: videoData, // Lưu dữ liệu base64
+                        file: file,
+                        duration: video.duration,
+                        width: video.videoWidth,
+                        height: video.videoHeight
+                    });
+                    updateMediaPreview();
+                    updatePostButton();
+                };
+
+                video.onerror = function() {
+                    alert('Không thể tải video. Vui lòng thử lại.');
+                };
+            };
+            reader.readAsDataURL(file);
+        }
         // Xử lý ảnh giữ nguyên
         else if (file.type.startsWith('image/')) {
             const reader = new FileReader();
@@ -273,6 +249,7 @@ function handleVideoUpload(file) {
         }
     });
 });
+
 
     // Update Media Preview
 function updateMediaPreview() {
@@ -298,7 +275,6 @@ function updateMediaPreview() {
     mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
 }
 
-
     // Remove Media
     window.removeMedia = function(index) {
         selectedMedia.splice(index, 1);
@@ -307,73 +283,53 @@ function updateMediaPreview() {
     }
 
     // Update Post Button State
-function updatePostButton() {
-    const hasContent = postInput.value.trim().length > 0;
-    const hasMedia = selectedMedia.length > 0;
-    postButton.disabled = !hasContent && !hasMedia;
-}
+    function updatePostButton() {
+        postButton.disabled = !postInput.value.trim() && selectedMedia.length === 0;
+    }
 
     // Create New Post
     postButton.addEventListener('click', createPost);
 
+// Hàm tạo post mới
 async function createPost() {
     const content = postInput.value.trim();
     if (!content && selectedMedia.length === 0) return;
 
-    // Vô hiệu hóa nút đăng để tránh double-post
-    postButton.disabled = true;
+    // Tạo post object
+    const postId = Date.now();
+    const post = {
+        id: postId,
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: selectedMedia.map(media => ({
+            type: media.type,
+            url: media.url,
+            ...(media.type === 'video' && {
+                duration: media.duration,
+                width: media.width,
+                height: media.height
+            })
+        })),
+        likes: 0,
+        likes2: 0,
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
 
-    try {
-        // Tạo post object
-        const postId = Date.now();
-        const post = {
-            id: postId,
-            content: content,
-            author: {
-                name: profileName,
-                username: profileUsername,
-                avatar: document.querySelector('.profile-avatar img').src
-            },
-            media: await Promise.all(selectedMedia.map(async media => ({
-                type: media.type,
-                url: media.url,
-                ...(media.type === 'video' && {
-                    duration: media.duration || 0,
-                    width: media.width || 0,
-                    height: media.height || 0
-                })
-            }))),
-            likes: 0,
-            likes2: 0,
-            comments: [],
-            timestamp: new Date().toISOString()
-        };
+    // Thêm post vào DOM và lưu
+    addPostToDOM(post);
+    savePost(post);
 
-        // Thêm post vào DOM và lưu
-        addPostToDOM(post);
-        savePost(post);
-
-        // Reset form
-        postInput.value = '';
-        postInput.style.height = 'auto';
-        selectedMedia = [];
-        mediaPreview.innerHTML = '';
-        mediaPreview.style.display = 'none';
-        
-        // Cập nhật UI
-        updatePostButton();
-        updateMediaTab();
-        
-        // Scroll lên đầu trang
-        window.scrollTo({top: 0, behavior: 'smooth'});
-
-    } catch (error) {
-        console.error('Lỗi khi tạo bài đăng:', error);
-        alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại!');
-    } finally {
-        // Kích hoạt lại nút đăng
-        postButton.disabled = false;
-    }
+    // Reset form
+    postInput.value = '';
+    selectedMedia = [];
+    mediaPreview.innerHTML = '';
+    mediaPreview.style.display = 'none';
+    updatePostButton();
 }
 
 
