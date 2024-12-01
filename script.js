@@ -1,3 +1,4 @@
+
 (function() {
     let isLocked = false;
     
@@ -314,17 +315,6 @@ async function createPost() {
         console.error('Chi tiết lỗi:', error);
         alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại.');
     }
-}
-
-// Thêm hàm reset form mới này
-function resetPostForm() {
-    postInput.value = '';
-    postInput.style.height = 'auto';
-    selectedMedia = [];
-    mediaPreview.style.display = 'none';
-    mediaPreview.innerHTML = '';
-    mediaInput.value = '';
-    updatePostButton();
 }
 
 // Thêm hàm reset form mới này
