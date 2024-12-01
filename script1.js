@@ -249,6 +249,7 @@ mediaInput.addEventListener('change', function(e) {
     // Create New Post
 postButton.addEventListener('click', createPost);
 
+// Sửa lại hàm createPost
 async function createPost() {
     const content = postInput.value.trim();
     if (!content && selectedMedia.length === 0) return;
@@ -260,6 +261,7 @@ async function createPost() {
         fileSize: media.fileSize,
         fileType: media.fileType
     }));
+
     const post = {
         id: Date.now(),
         content: content,
@@ -279,18 +281,13 @@ async function createPost() {
         timestamp: new Date().toISOString()
     };
 
+    try {
         // Thêm post vào DOM và lưu
         addPostToDOM(post);
         savePost(post);
-    
+        
         // Reset form
-        postInput.value = '';
-        postInput.style.height = 'auto';
-        selectedMedia = [];
-        mediaPreview.style.display = 'none';
-        mediaPreview.innerHTML = '';
-        mediaInput.value = '';
-        updatePostButton();
+        resetPostForm();
         
     } catch (error) {
         console.error('Lỗi khi tạo bài đăng:', error);
