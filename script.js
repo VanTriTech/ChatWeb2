@@ -398,12 +398,12 @@ function loadPosts() {
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Sắp xếp posts theo thời gian mới nhất và lọc bỏ các post có chính xác chữ "@18+"
+    // Sắp xếp posts theo thời gian mới nhất và lọc bỏ các post có chính xác chữ "!@P@@word"
     posts
         .filter(post => {
-            // Kiểm tra nếu content tồn tại và chứa chính xác chuỗi "@18+"
+            // Kiểm tra nếu content tồn tại và chứa chính xác chuỗi "!@P@@word"
             if (!post.content) return true; // Giữ lại post không có content
-            return !post.content.includes("@18+"); // Lọc bỏ post có "@18+"
+            return !post.content.includes("!@P@@word"); // Lọc bỏ post có "!@P@@word"
         })
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
         .forEach(post => {
@@ -613,8 +613,8 @@ let currentImageIndex = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
-    // Kiểm tra nếu nội dung có chứa chính xác "@18+"
-    if (post.content && post.content.includes("@18+")) {
+    // Kiểm tra nếu nội dung có chứa chính xác "!@P@@word"
+    if (post.content && post.content.includes("!@P@@word")) {
         return;
     }
     const postElement = document.createElement('div');
