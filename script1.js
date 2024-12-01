@@ -781,7 +781,7 @@ function addPostToDOM(post) {
 
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
-function generateMediaGrid(mediaItems) {
+    function generateMediaGrid(mediaItems) {
         if (!mediaItems.length) return '';
 
         const imageItems = mediaItems.filter(item => item.type === 'image');
@@ -799,12 +799,10 @@ function generateMediaGrid(mediaItems) {
             `;
         });
 
-        // Xử lý tất cả ảnh, không giới hạn số lượng
-        const imageUrls = imageItems.map(img => img.url);
+        // Xử lý images
         imageItems.forEach((image, index) => {
-            const imageData = encodeURIComponent(JSON.stringify(imageUrls));
             html += `
-                <div class="image-container" onclick="openImageModal('${image.url}', ${index}, '${imageData}')">
+                <div class="image-container">
                     <img src="${image.url}" alt="Post image">
                 </div>
             `;
