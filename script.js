@@ -1523,14 +1523,16 @@ function updateMediaTab() {
     const mediaSection = document.getElementById('media-section');
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     
-    // Lọc các bài đăng có media của LanYouJin
+    // Lọc các bài đăng có chứa "@LanYouJin" trong nội dung chính của post (không tính comments)
     const allMedia = posts.reduce((acc, post) => {
+        // Kiểm tra nội dung chính của post có chứa @LanYouJin
         const postContent = post.content || '';
         if (
             postContent.toLowerCase().includes("@lanyoujin") &&
             post.media && 
             post.media.length > 0
         ) {
+            // Thêm thông tin post vào mỗi media item
             const mediaWithPostInfo = post.media.map(media => ({
                 ...media,
                 postId: post.id,
@@ -1543,45 +1545,41 @@ function updateMediaTab() {
         return acc;
     }, []);
     
-    // Sắp xếp theo thời gian mới nhất
+    // Sắp xếp media theo thời gian mới nhất
     allMedia.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
-    // Tạo grid container
+    // Tạo grid hiển thị media
     const mediaGrid = document.createElement('div');
-    mediaGrid.className = 'media-grid';
+    mediaGrid.className = 'post-media multiple-images';
     
-    // Tạo HTML cho media items
+    // Tạo HTML cho từng media item
     const mediaHTML = allMedia.map(media => {
         const mediaOverlay = `
-            <div class="media-info">
-                <span class="media-time">${formatTime(media.timestamp)}</span>
-                <span class="media-author">${media.author.name}</span>
+            <div class="media-overlay">
+                <span class="media-tag">@LanYouJin</span>
+                <span class="media-author">by ${media.author.name}</span>
             </div>
         `;
 
-        if (media.type === 'video') {
-            return `
-                <div class="media-item video">
-                    <div class="video-wrapper">
-                        <video src="${media.url}" controls preload="metadata">
-                            Your browser does not support video playback.
-                        </video>
-                        ${mediaOverlay}
-                    </div>
-                </div>
-            `;
-        } else if (media.type === 'image') {
+        if (media.type === 'image') {
             const imageData = encodeURIComponent(JSON.stringify([media]));
             return `
-                <div class="media-item image" onclick="openImageModal('${media.url}', 0, '${imageData}')">
+                <div class="image-container" onclick="openImageModal('${media.url}', 0, '${imageData}')">
                     <img src="${media.url}" alt="Media content">
+                    ${mediaOverlay}
+                </div>
+            `;
+        } else if (media.type === 'video') {
+            return `
+                <div class="video-container">
+                    <video src="${media.url}" controls></video>
                     ${mediaOverlay}
                 </div>
             `;
         }
         return '';
     }).join('');
-
+    
     mediaGrid.innerHTML = mediaHTML;
     
     // Xóa nội dung cũ và thêm grid mới
