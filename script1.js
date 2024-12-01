@@ -1715,33 +1715,43 @@ function restoreData(event) {
 function addGitHubVideo() {
     const videoUrl = prompt("Nhập GitHub raw URL của video:");
     if (videoUrl && videoUrl.trim()) {
-        // Kiểm tra URL hợp lệ
+        // Log để kiểm tra URL
+        console.log("Video URL:", videoUrl);
+        
+        // Kiểm tra URL kỹ hơn
         if (!videoUrl.includes('raw.githubusercontent.com')) {
-            alert('Vui lòng nhập GitHub raw URL hợp lệ!');
+            alert('URL không hợp lệ! URL phải có dạng: https://raw.githubusercontent.com/...');
             return;
         }
 
-        // Tạo video preview
-        const videoPreview = `
-            <div class="preview-item video-preview">
-                <video src="${videoUrl}" controls>
-                    Your browser does not support the video tag.
-                </video>
-                <button class="remove-preview" onclick="removeMedia(0)">×</button>
-            </div>
-        `;
+        // Kiểm tra video có load được không
+        const testVideo = document.createElement('video');
+        testVideo.src = videoUrl;
+        testVideo.onloadeddata = () => {
+            // Video load thành công
+            const videoPreview = `
+                <div class="preview-item video-preview">
+                    <video src="${videoUrl}" controls>
+                        Your browser does not support the video tag.
+                    </video>
+                    <button class="remove-preview" onclick="removeMedia(0)">×</button>
+                </div>
+            `;
 
-        // Hiển thị preview
-        const mediaPreview = document.querySelector('.media-preview');
-        mediaPreview.innerHTML = videoPreview;
-        mediaPreview.style.display = 'grid';
+            const mediaPreview = document.querySelector('.media-preview');
+            mediaPreview.innerHTML = videoPreview;
+            mediaPreview.style.display = 'grid';
 
-        // Lưu thông tin video
-        selectedMedia = [{
-            type: 'video',
-            url: videoUrl
-        }];
+            selectedMedia = [{
+                type: 'video',
+                url: videoUrl
+            }];
 
-        updatePostButton();
+            updatePostButton();
+        };
+
+        testVideo.onerror = () => {
+            alert('Không thể load video. Vui lòng kiểm tra lại URL!');
+        };
     }
 }
