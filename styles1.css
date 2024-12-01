@@ -1762,23 +1762,28 @@ body {
 }
 .video-container {
     width: 100%;
-    max-width: 600px;
+    max-width: 400px; /* Giảm từ 600px xuống 400px */
     margin: 10px 0;
     border-radius: 12px;
     overflow: hidden;
     background: #000;
+    position: relative;
 }
 
 
 .video-container video {
     width: 100%;
-    max-height: 400px;
+    height: 100%;
+    max-height: 300px; /* Giảm từ 400px xuống 300px */
     object-fit: contain;
 }
 
 .preview-item.video-preview {
+    width: 100%;
+    max-width: 400px; /* Giảm kích thước preview */
     aspect-ratio: 16/9;
     background: #000;
+    position: relative;
 }
 
 
