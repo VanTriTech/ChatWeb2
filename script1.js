@@ -145,14 +145,12 @@
     }, 100);
 })();
 document.addEventListener('DOMContentLoaded', function() {
-    const twitterButton = document.querySelector('.twitter-video-btn');
-    if (twitterButton) {
-        twitterButton.addEventListener('click', showTwitterVideoInput);
-    }
-});
     // DOM Elements
     const postInput = document.getElementById('post-input');
     const postButton = document.getElementById('post-button');
+    if (postButton) {
+        postButton.addEventListener('click', createPost);
+    }
     const mediaInput = document.getElementById('media-input');
     const postsContainer = document.getElementById('posts-container');
     const mediaPreview = document.querySelector('.media-preview');
@@ -245,45 +243,41 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-    async function createPost() {
-        const content = postInput.value.trim();
-        if (!content && selectedMedia.length === 0) return;
+async function createPost() {
+    const content = postInput.value.trim();
+    if (!content && selectedMedia.length === 0 && !window.currentTwitterEmbed) return;
 
-        const postId = Date.now();
-        const post = {
-            id: postId,
-            content: content,
-            author: {
-                name: profileName,
-                username: profileUsername,
-                avatar: document.querySelector('.profile-avatar img').src
-            },
-            media: selectedMedia,
-            reactions: {
-                likes: 0,
-                hearts: 0,
-                angry: 0
-            },
-            userReactions: {}, // Lưu reaction của từng user
-            comments: [],
-            timestamp: new Date().toISOString()
-        };
+    const postId = Date.now();
+    const post = {
+        id: postId,
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: selectedMedia,
+        twitterEmbed: window.currentTwitterEmbed,
+        likes: 0,
+        likes2: 0,
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
 
-        // Add post to DOM
-        addPostToDOM(post);
+    // Thêm post vào DOM và lưu
+    addPostToDOM(post);
+    savePost(post);
 
-        // Save to localStorage
-        savePost(post);
-
-        // Reset form
-        postInput.value = '';
-        postInput.style.height = 'auto';
-        selectedMedia = [];
-        mediaPreview.style.display = 'none';
-        mediaPreview.innerHTML = '';
-        mediaInput.value = '';
-        updatePostButton();
-    }
+    // Reset form
+    postInput.value = '';
+    postInput.style.height = 'auto';
+    selectedMedia = [];
+    mediaPreview.style.display = 'none';
+    mediaPreview.innerHTML = '';
+    mediaInput.value = '';
+    window.currentTwitterEmbed = null;
+    updatePostButton();
+}
 
 
     // Initialize Video Players
@@ -621,6 +615,11 @@ function savePost(post) {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     posts.unshift(post); // Thêm post mới vào đầu mảng
     localStorage.setItem('posts', JSON.stringify(posts));
+    
+    // Cập nhật lại tab Media nếu cần
+    if (post.media && post.media.length > 0) {
+        updateMediaTab();
+    }
 }
 
 
@@ -629,87 +628,19 @@ let currentImageIndex = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
-    // Kiểm tra nếu nội dung có chứa chính xác "@meme"
+    // Kiểm tra nếu nội dung có chứa "@meme"
     if (post.content && post.content.includes("@meme")) {
         return;
     }
+
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
-   // Thêm phần xử lý Twitter embed
-    const twitterEmbedHTML = post.twitterEmbed ? `
-        <div class="twitter-embed-container">
-            ${post.twitterEmbed}
-        </div>
-    ` : '';
-
-    postElement.innerHTML = `
-        <img src="${post.author.avatar}" alt="Avatar" class="post-avatar">
-        <div class="post-content">
-            <div class="post-header">
-                <div class="post-info">
-                    <span class="post-name">${post.author.name}</span>
-                    <span class="post-username">${post.author.username}</span>
-                    <span class="post-time">${formatTime(post.timestamp)}</span>
-                </div>
-                <div class="post-menu">
-                    <button class="post-menu-button" onclick="togglePostMenu(${post.id})">
-                        <i class="fas fa-ellipsis-h"></i>
-                    </button>
-                    <div class="post-menu-dropdown" id="menu-${post.id}">
-                        <div class="post-menu-item edit" onclick="editPost(${post.id})">
-                            <i class="fas fa-edit"></i>
-                            Chỉnh sửa
-                        </div>
-                        <div class="post-menu-item edit-reactions" onclick="editPostReactions(${post.id})">
-                            <i class="fas fa-heart"></i>
-                            Sửa reactions
-                        </div>
-                        <div class="post-menu-item delete" onclick="deletePost(${post.id})">
-                            <i class="fas fa-trash"></i>
-                            Xóa
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="post-text-container">
-                ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
-            </div>
-            ${mediaHTML}
-            ${twitterEmbedHTML}
-            <div class="post-actions">
-                <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
-                    <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
-                    <span class="like-count">${post.likes || 0}</span>
-                </button>
-                <button class="action-button like2-button ${post.userLiked2 ? 'liked' : ''}" onclick="toggleLike2(${post.id})">
-                    <i class="${post.userLiked2 ? 'fas' : 'far'} fa-thumbs-up"></i>
-                    <span class="like2-count">${post.likes2 || 0}</span>
-                </button>
-                <button class="action-button" onclick="toggleComments(${post.id})">
-                    <i class="far fa-comment"></i>
-                    <span class="comment-count">${post.comments ? post.comments.length : 0}</span>
-                </button>
-            </div>
-            <div class="comments-section" id="comments-${post.id}">
-                <div class="comment-form">
-                    <textarea class="comment-input" 
-                              placeholder="Viết bình luận..." 
-                              onkeydown="handleComment(event, ${post.id})"
-                              oninput="autoResizeTextarea(this)"></textarea>
-                </div>
-                <div class="comment-list">
-                    ${generateCommentsHTML(post.comments)}
-                </div>
-            </div>
-        </div>
-    `;
-
-    postsContainer.insertBefore(postElement, postsContainer.firstChild);
-    updateMediaTab();
-}
+    // Xử lý nội dung để giữ nguyên xuống dòng
     // Xử lý nội dung để giữ nguyên xuống dòng
     const formattedContent = post.content ? post.content.replace(/\n/g, '<br>') : '';
+    
+    // Xử lý media
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
     const commentsHTML = post.comments ? post.comments.map(comment => `
         <div class="comment" data-comment-id="${comment.id}">
@@ -804,57 +735,50 @@ function addPostToDOM(post) {
                         <i class="fas fa-ellipsis-h"></i>
                     </button>
                     <div class="post-menu-dropdown" id="menu-${post.id}">
-    <div class="post-menu-item edit" onclick="editPost(${post.id})">
-        <i class="fas fa-edit"></i>
-        Chỉnh sửa
-    </div>
-    <div class="post-menu-item edit-reactions" onclick="editPostReactions(${post.id})">
-        <i class="fas fa-heart"></i>
-        Sửa reactions
-    </div>
-    <div class="post-menu-item delete" onclick="deletePost(${post.id})">
-        <i class="fas fa-trash"></i>
-        Xóa
-    </div>
-</div>
-
+                        <div class="post-menu-item edit" onclick="editPost(${post.id})">
+                            <i class="fas fa-edit"></i>
+                            Chỉnh sửa
+                        </div>
+                        <div class="post-menu-item delete" onclick="deletePost(${post.id})">
+                            <i class="fas fa-trash"></i>
+                            Xóa
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="post-text-container">
-                ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
-            </div>
+            ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
             ${mediaHTML}
+            ${twitterEmbedHTML}
             <div class="post-actions">
-        <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
-            <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
-            <span class="like-count">${post.likes || 0}</span>
-        </button>
-        <button class="action-button like2-button ${post.userLiked2 ? 'liked' : ''}" onclick="toggleLike2(${post.id})">
-            <i class="${post.userLiked2 ? 'fas' : 'far'} fa-thumbs-up"></i>
-            <span class="like2-count">${post.likes2 || 0}</span>
-        </button>
-            <button class="action-button" onclick="toggleComments(${post.id})">
-                <i class="far fa-comment"></i>
-                <span class="comment-count">${post.comments ? post.comments.length : 0}</span>
-            </button>
-        </div>
+                <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+                    <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
+                    <span class="like-count">${post.likes || 0}</span>
+                </button>
+                <button class="action-button like2-button ${post.userLiked2 ? 'liked' : ''}" onclick="toggleLike2(${post.id})">
+                    <i class="${post.userLiked2 ? 'fas' : 'far'} fa-thumbs-up"></i>
+                    <span class="like2-count">${post.likes2 || 0}</span>
+                </button>
+                <button class="action-button" onclick="toggleComments(${post.id})">
+                    <i class="far fa-comment"></i>
+                    <span class="comment-count">${post.comments ? post.comments.length : 0}</span>
+                </button>
+            </div>
             <div class="comments-section" id="comments-${post.id}">
                 <div class="comment-form">
-            <textarea class="comment-input" 
-                      placeholder="Viết bình luận..." 
-                      onkeydown="handleComment(event, ${post.id})"
-                      oninput="autoResizeTextarea(this)"></textarea>
+                    <textarea class="comment-input" 
+                              placeholder="Viết bình luận..." 
+                              onkeydown="handleComment(event, ${post.id})"
+                              oninput="autoResizeTextarea(this)"></textarea>
                 </div>
                 <div class="comment-list">
-                    ${commentsHTML}
+                    ${generateCommentsHTML(post.comments || [])}
                 </div>
             </div>
         </div>
     `;
 
     postsContainer.insertBefore(postElement, postsContainer.firstChild);
-    updateMediaTab();
-}
+    u
 
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
@@ -1790,176 +1714,4 @@ function restoreData(event) {
         }
     };
     reader.readAsText(file);
-}
-// Thêm hàm hiển thị input cho Twitter video
-window.showTwitterVideoInput = function() {
-    // Tạo modal input cho Twitter URL
-    const modal = document.createElement('div');
-    modal.className = 'twitter-video-modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <h3>Thêm video từ X.com</h3>
-            <input type="text" 
-                   id="twitter-url-input" 
-                   placeholder="Dán link bài đăng X.com vào đây..."
-                   class="twitter-url-input">
-            <div class="modal-actions">
-                <button onclick="closeTwitterModal()" class="cancel-btn">Hủy</button>
-                <button onclick="processTwitterUrl()" class="save-btn">Thêm</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-    
-    // Focus vào input
-    setTimeout(() => {
-        document.getElementById('twitter-url-input').focus();
-    }, 100);
-}
-
-// Hàm đóng modal
-window.closeTwitterModal = function() {
-    const modal = document.querySelector('.twitter-video-modal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
-// Hàm xử lý URL Twitter
-window.processTwitterUrl = function() {
-    const input = document.getElementById('twitter-url-input');
-    const url = input.value.trim();
-    
-    if (!url) {
-        alert('Vui lòng nhập URL từ X.com');
-        return;
-    }
-
-    // Kiểm tra URL hợp lệ
-    if (!isValidTwitterUrl(url)) {
-        alert('URL không hợp lệ. Vui lòng nhập URL từ X.com');
-        return;
-    }
-
-
-    // Tạo video embed
-    const videoEmbed = `<div class="twitter-video-embed">
-        <iframe 
-            src="https://platform.x.com/embed/Tweet?id=${extractTweetId(url)}"
-            width="100%"
-            height="400"
-            frameborder="0"
-            allowfullscreen>
-        </iframe>
-    </div>`;
-
-    // Lưu embed code để sử dụng khi tạo post
-    window.currentTwitterEmbed = videoEmbed;
-    
-    // Đóng modal
-    closeTwitterModal();
-    
-    // Enable nút đăng bài
-    document.getElementById('post-button').disabled = false;
-}
-    // Tạo embed code
-    const tweetId = extractTweetId(url);
-    const videoEmbed = `
-        <div class="twitter-video-container">
-            <blockquote class="twitter-tweet" data-conversation="none">
-                <a href="${url}"></a>
-            </blockquote>
-            <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"><\/script>
-        </div>
-    `;
-    // Hiển thị preview
-    mediaPreview.style.display = 'block';
-    mediaPreview.innerHTML += `
-        <div class="preview-item twitter-preview">
-            <div class="twitter-embed-preview">Video từ X.com</div>
-            <button class="remove-preview" onclick="removeTwitterEmbed()">×</button>
-        </div>
-    `;
-
-    // Thêm vào post content và preview
-    const postInput = document.getElementById('post-input');
-    const mediaPreview = document.querySelector('.media-preview');
-    postInput.value += `\n${url}\n`;
-    
-    // Lưu embed code để sử dụng khi tạo post
-    window.currentTwitterEmbed = embedCode;
-    
-    // Đóng modal
-    closeTwitterModal();
-    
-    // Enable nút đăng bài
-    document.getElementById('post-button').disabled = false;
-}
-// Thêm hàm xóa Twitter embed
-window.removeTwitterEmbed = function() {
-    window.currentTwitterEmbed = null;
-    const twitterPreview = document.querySelector('.twitter-preview');
-    if (twitterPreview) {
-        twitterPreview.remove();
-    }
-    
-    // Kiểm tra xem còn media nào không để ẩn preview container
-    const mediaPreview = document.querySelector('.media-preview');
-    if (!mediaPreview.children.length) {
-        mediaPreview.style.display = 'none';
-    }
-    
-    // Update trạng thái nút đăng
-    updatePostButton();
-}
-// Hàm kiểm tra URL Twitter hợp lệ
-function isValidTwitterUrl(url) {
-    return url.match(/^https?:\/\/(twitter\.com|x\.com)\/[a-zA-Z0-9_]+\/status\/[0-9]+/i);
-}
-
-// Hàm trích xuất Tweet ID
-function extractTweetId(url) {
-    const match = url.match(/\/status\/([0-9]+)/);
-    return match ? match[1] : null;
-}
-
-// Sửa lại hàm createPost để hỗ trợ Twitter embed
-async function createPost() {
-    const content = postInput.value.trim();
-    if (!content && selectedMedia.length === 0 && !window.currentTwitterEmbed) return;
-
-    const postId = Date.now();
-    const post = {
-        id: postId,
-        content: content,
-        author: {
-            name: profileName,
-            username: profileUsername,
-            avatar: document.querySelector('.profile-avatar img').src
-        },
-        media: selectedMedia,
-        twitterEmbed: window.currentTwitterEmbed, // Thêm Twitter embed
-        reactions: {
-            likes: 0,
-            hearts: 0,
-            angry: 0
-        },
-        userReactions: {},
-        comments: [],
-        timestamp: new Date().toISOString()
-    };
-
-    // Thêm post vào DOM và lưu
-    addPostToDOM(post);
-    savePost(post);
-
-    // Reset form
-    postInput.value = '';
-    postInput.style.height = 'auto';
-    selectedMedia = [];
-    mediaPreview.style.display = 'none';
-    mediaPreview.innerHTML = '';
-    mediaInput.value = '';
-    window.currentTwitterEmbed = null; // Reset Twitter embed
-    updatePostButton();
 }
