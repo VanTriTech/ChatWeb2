@@ -781,7 +781,7 @@ function addPostToDOM(post) {
 
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
-function generateMediaGrid(mediaItems) {
+    function generateMediaGrid(mediaItems) {
         if (!mediaItems.length) return '';
 
         const imageItems = mediaItems.filter(item => item.type === 'image');
@@ -799,12 +799,10 @@ function generateMediaGrid(mediaItems) {
             `;
         });
 
-        // Xử lý tất cả ảnh, không giới hạn số lượng
-        const imageUrls = imageItems.map(img => img.url);
+        // Xử lý images
         imageItems.forEach((image, index) => {
-            const imageData = encodeURIComponent(JSON.stringify(imageUrls));
             html += `
-                <div class="image-container" onclick="openImageModal('${image.url}', ${index}, '${imageData}')">
+                <div class="image-container">
                     <img src="${image.url}" alt="Post image">
                 </div>
             `;
@@ -1713,4 +1711,47 @@ function restoreData(event) {
         }
     };
     reader.readAsText(file);
+}
+function addGitHubVideo() {
+    const videoUrl = prompt("Nhập GitHub raw URL của video:");
+    if (videoUrl && videoUrl.trim()) {
+        // Log để kiểm tra URL
+        console.log("Video URL:", videoUrl);
+        
+        // Kiểm tra URL kỹ hơn
+        if (!videoUrl.includes('raw.githubusercontent.com')) {
+            alert('URL không hợp lệ! URL phải có dạng: https://raw.githubusercontent.com/...');
+            return;
+        }
+
+        // Kiểm tra video có load được không
+        const testVideo = document.createElement('video');
+        testVideo.src = videoUrl;
+        testVideo.onloadeddata = () => {
+            // Video load thành công
+            const videoPreview = `
+                <div class="preview-item video-preview">
+                    <video src="${videoUrl}" controls>
+                        Your browser does not support the video tag.
+                    </video>
+                    <button class="remove-preview" onclick="removeMedia(0)">×</button>
+                </div>
+            `;
+
+            const mediaPreview = document.querySelector('.media-preview');
+            mediaPreview.innerHTML = videoPreview;
+            mediaPreview.style.display = 'grid';
+
+            selectedMedia = [{
+                type: 'video',
+                url: videoUrl
+            }];
+
+            updatePostButton();
+        };
+
+        testVideo.onerror = () => {
+            alert('Không thể load video. Vui lòng kiểm tra lại URL!');
+        };
+    }
 }
