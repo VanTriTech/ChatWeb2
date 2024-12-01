@@ -847,37 +847,33 @@ function addPostToDOM(post) {
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
 function generateMediaGrid(mediaItems) {
-        if (!mediaItems.length) return '';
+    if (!mediaItems.length) return '';
 
-        const imageItems = mediaItems.filter(item => item.type === 'image');
-        const videoItems = mediaItems.filter(item => item.type === 'video');
+    const gridClass = getMediaGridClass(mediaItems.length);
+    let html = `<div class="post-media ${gridClass}">`;
 
-        let gridClass = getMediaGridClass(mediaItems.length);
-        let html = `<div class="post-media ${gridClass}">`;
-
-        // Xử lý videos
-        videoItems.forEach(video => {
+    mediaItems.forEach(media => {
+        if (media.type === 'image') {
+            const imageData = encodeURIComponent(JSON.stringify([media]));
             html += `
-                <div class="video-container">
-                    <video src="${video.url}" controls></video>
+                <div class="image-container" onclick="openImageModal('${media.url}', 0, '${imageData}')">
+                    <img src="${media.url}" alt="Post image">
                 </div>
             `;
-        });
-
-        // Xử lý tất cả ảnh, không giới hạn số lượng
-        const imageUrls = imageItems.map(img => img.url);
-        imageItems.forEach((image, index) => {
-            const imageData = encodeURIComponent(JSON.stringify(imageUrls));
+        } else if (media.type === 'twitter-video') {
             html += `
-                <div class="image-container" onclick="openImageModal('${image.url}', ${index}, '${imageData}')">
-                    <img src="${image.url}" alt="Post image">
+                <div class="twitter-preview">
+                    <iframe src="${media.embedUrl}" 
+                            allowfullscreen>
+                    </iframe>
                 </div>
             `;
-        });
+        }
+    });
 
-        html += '</div>';
-        return html;
-    }
+    html += '</div>';
+    return html;
+}
 
     function getMediaGridClass(count) {
         if (count === 1) return 'single-image';
