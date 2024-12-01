@@ -1681,14 +1681,12 @@ function restoreData(event) {
 
 const style = document.createElement('style');
 style.textContent = `
-    .hidden-post {
-        display: none !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        height: 0 !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
+    .post {
+        display: block !important; /* Đảm bảo hiển thị */
+        visibility: visible !important;
+        opacity: 1 !important;
+        height: auto !important;
+        overflow: visible !important;
     }
     .post-text {
         white-space: pre-line;
