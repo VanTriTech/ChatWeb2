@@ -1714,3 +1714,36 @@ function restoreData(event) {
     };
     reader.readAsText(file);
 }
+function addGitHubVideo() {
+    const videoUrl = prompt("Nhập GitHub raw URL của video:");
+    if (videoUrl && videoUrl.trim()) {
+        // Kiểm tra URL hợp lệ
+        if (!videoUrl.includes('raw.githubusercontent.com')) {
+            alert('Vui lòng nhập GitHub raw URL hợp lệ!');
+            return;
+        }
+
+        // Tạo video preview
+        const videoPreview = `
+            <div class="preview-item video-preview">
+                <video src="${videoUrl}" controls>
+                    Your browser does not support the video tag.
+                </video>
+                <button class="remove-preview" onclick="removeMedia(0)">×</button>
+            </div>
+        `;
+
+        // Hiển thị preview
+        const mediaPreview = document.querySelector('.media-preview');
+        mediaPreview.innerHTML = videoPreview;
+        mediaPreview.style.display = 'grid';
+
+        // Lưu thông tin video
+        selectedMedia = [{
+            type: 'video',
+            url: videoUrl
+        }];
+
+        updatePostButton();
+    }
+}
