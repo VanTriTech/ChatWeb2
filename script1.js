@@ -193,52 +193,39 @@ document.addEventListener('DOMContentLoaded', function() {
 mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     files.forEach(file => {
+        // Kiểm tra kích thước file
+        if (file.size > 100 * 1024 * 1024) { // Giới hạn 100MB
+            alert('File quá lớn. Vui lòng chọn file nhỏ hơn 100MB');
+            return;
+        }
+
         if (file.type.startsWith('video/')) {
-            handleVideoUpload(file);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                selectedMedia.push({
+                    type: 'video',
+                    url: e.target.result,
+                    file: file
+                });
+                updateMediaPreview();
+                updatePostButton();
+            };
+            reader.readAsDataURL(file);
         } else if (file.type.startsWith('image/')) {
-            handleImageUpload(file);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                selectedMedia.push({
+                    type: 'image',
+                    url: e.target.result,
+                    file: file
+                });
+                updateMediaPreview();
+                updatePostButton();
+            };
+            reader.readAsDataURL(file);
         }
     });
 });
-
-// Hàm xử lý upload video
-function handleVideoUpload(file) {
-    if (file.size > 50 * 1024 * 1024) {
-        alert('Video quá lớn. Vui lòng chọn video nhỏ hơn 50MB');
-        return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const video = document.createElement('video');
-        video.src = e.target.result;
-        
-        video.onloadedmetadata = function() {
-            const mediaItem = {
-                type: 'video',
-                url: e.target.result,
-                file: file,
-                width: video.videoWidth,
-                height: video.videoHeight
-            };
-
-            selectedMedia.push(mediaItem);
-            updateMediaPreview();
-            updatePostButton();
-        };
-
-        video.onerror = function() {
-            alert('Không thể tải video. Vui lòng thử lại.');
-        };
-    };
-
-    reader.onerror = function() {
-        alert('Lỗi khi đọc file video.');
-    };
-
-    reader.readAsDataURL(file);
-}
-
 
     // Update Media Preview
 function updateMediaPreview() {
@@ -247,14 +234,12 @@ function updateMediaPreview() {
             return `
                 <div class="preview-item video-preview">
                     <video src="${media.url}" controls preload="metadata" playsinline>
-                        <source src="${media.url}" type="video/mp4">
                         Your browser does not support video playback.
                     </video>
                     <button class="remove-preview" onclick="removeMedia(${index})">×</button>
                 </div>
             `;
         } else {
-            // Xử lý ảnh như cũ
             return `
                 <div class="preview-item">
                     <img src="${media.url}" alt="Preview">
@@ -263,7 +248,6 @@ function updateMediaPreview() {
             `;
         }
     }).join('');
-    
     mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
 }
 
