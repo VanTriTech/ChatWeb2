@@ -1752,3 +1752,11 @@ body {
     font-family: 'Font Awesome 5 Brands';
     font-size: 1.2em;
 }
+.twitter-embed {
+    margin: 10px 0;
+    width: 100%;
+}
+
+.twitter-embed iframe {
+    width: 100% !important;
+}
