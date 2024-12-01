@@ -617,12 +617,12 @@ function addPostToDOM(post) {
     if (post.content && post.content.includes("@18+")) {
         return;
     }
+
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
     // Xử lý nội dung để giữ nguyên xuống dòng
     const formattedContent = post.content ? post.content.replace(/\n/g, '<br>') : '';
-
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
     const commentsHTML = post.comments ? post.comments.map(comment => `
         <div class="comment" data-comment-id="${comment.id}">
@@ -716,7 +716,7 @@ function addPostToDOM(post) {
                     <button class="post-menu-button" onclick="togglePostMenu(${post.id})">
                         <i class="fas fa-ellipsis-h"></i>
                     </button>
-<div class="post-menu-dropdown" id="menu-${post.id}">
+                    <div class="post-menu-dropdown" id="menu-${post.id}">
     <div class="post-menu-item edit" onclick="editPost(${post.id})">
         <i class="fas fa-edit"></i>
         Chỉnh sửa
@@ -734,9 +734,9 @@ function addPostToDOM(post) {
 
                 </div>
             </div>
-        ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
+            ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
             ${mediaHTML}
-    <div class="post-actions">
+            <div class="post-actions">
         <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
             <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
             <span class="like-count">${post.likes || 0}</span>
