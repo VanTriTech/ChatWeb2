@@ -267,29 +267,35 @@ function updateMediaPreview() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-    async function createPost() {
-        const content = postInput.value.trim();
-        if (!content && selectedMedia.length === 0) return;
+// Hàm tạo post mới
+async function createPost() {
+    const content = postInput.value.trim();
+    if (!content && selectedMedia.length === 0) return;
 
-        const postId = Date.now();
-        const post = {
-            id: postId,
-            content: content,
-            author: {
-                name: profileName,
-                username: profileUsername,
-                avatar: document.querySelector('.profile-avatar img').src
-            },
-            media: selectedMedia,
-            reactions: {
-                likes: 0,
-                hearts: 0,
-                angry: 0
-            },
-            userReactions: {}, // Lưu reaction của từng user
-            comments: [],
-            timestamp: new Date().toISOString()
-        };
+    const postId = Date.now();
+    const post = {
+        id: postId,
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: selectedMedia.map(media => ({
+            type: media.type,
+            url: media.url,
+            // Thêm thông tin bổ sung cho video
+            ...(media.type === 'video' && {
+                thumbnail: media.thumbnail,
+                duration: media.duration
+            })
+        })),
+        likes: 0,
+        likes2: 0,
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
+
 
         // Add post to DOM
         addPostToDOM(post);
@@ -297,35 +303,34 @@ function updateMediaPreview() {
         // Save to localStorage
         savePost(post);
 
-        // Reset form
-        postInput.value = '';
-        postInput.style.height = 'auto';
-        selectedMedia = [];
-        mediaPreview.style.display = 'none';
-        mediaPreview.innerHTML = '';
-        mediaInput.value = '';
-        updatePostButton();
-    }
+    // Reset form
+    postInput.value = '';
+    selectedMedia = [];
+    mediaPreview.innerHTML = '';
+    mediaPreview.style.display = 'none';
+    updatePostButton();
+}
 
 
     // Initialize Video Players
-    function initializeVideoPlayers() {
-        const videos = document.querySelectorAll('.video-player');
-        videos.forEach(video => {
-            if (!video.hasAttribute('data-initialized')) {
-                video.setAttribute('data-initialized', 'true');
-                
-                // Add custom controls if needed
-                video.addEventListener('play', function() {
-                    // Handle play event
-                });
-                
-                video.addEventListener('pause', function() {
-                    // Handle pause event
-                });
-            }
-        });
-    }
+function initializeVideoPlayers() {
+    document.querySelectorAll('.post-video').forEach(video => {
+        if (!video.hasAttribute('data-initialized')) {
+            video.setAttribute('data-initialized', 'true');
+            
+            // Lưu trạng thái video
+            video.addEventListener('play', function() {
+                const postId = this.getAttribute('data-post-id');
+                const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+                const post = posts.find(p => p.id === parseInt(postId));
+                if (post) {
+                    post.videoPlayed = true;
+                    localStorage.setItem('posts', JSON.stringify(posts));
+                }
+            });
+        }
+    });
+}
 
     // Post Actions
     window.togglePostMenu = function(postId) {
@@ -641,7 +646,7 @@ function formatTime(timestamp) {
 
 function savePost(post) {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    posts.unshift(post); // Thêm post mới vào đầu mảng
+    posts.unshift(post);
     localStorage.setItem('posts', JSON.stringify(posts));
 }
 
@@ -808,36 +813,35 @@ function addPostToDOM(post) {
 
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
-function generateMediaGrid(mediaItems) {
-    if (!mediaItems || !mediaItems.length) return '';
-
-    const gridClass = mediaItems.length === 1 ? 'single-media' : 
-                     mediaItems.length === 2 ? 'two-media' :
-                     mediaItems.length === 3 ? 'three-media' : 'four-media';
-
-    let html = `<div class="post-media ${gridClass}">`;
+function generateMediaGrid(media) {
+    if (!media || !media.length) return '';
     
-    mediaItems.forEach((media, index) => {
-        if (media.type === 'video') {
-            html += `
-                <div class="video-container">
-                    <video controls preload="metadata" playsinline>
-                        <source src="${media.url}" type="video/mp4">
-                        Your browser does not support video playback.
-                    </video>
-                </div>
-            `;
-        } else {
-            html += `
-                <div class="image-container">
-                    <img src="${media.url}" alt="Post image ${index + 1}" loading="lazy">
-                </div>
-            `;
-        }
-    });
-
-    html += '</div>';
-    return html;
+    return `
+        <div class="post-media ${media.length > 1 ? 'multiple-images' : ''}">
+            ${media.map((item, index) => {
+                if (item.type === 'video') {
+                    return `
+                        <div class="video-container">
+                            <video src="${item.url}" 
+                                   controls 
+                                   preload="metadata"
+                                   playsinline
+                                   data-post-id="${item.postId}"
+                                   class="post-video">
+                                Your browser does not support video playback.
+                            </video>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="image-container" onclick="openImageModal('${item.url}', ${index}, '${encodeURIComponent(JSON.stringify(media))}')">
+                            <img src="${item.url}" alt="Post image">
+                        </div>
+                    `;
+                }
+            }).join('')}
+        </div>
+    `;
 }
 
     function getMediaGridClass(count) {
