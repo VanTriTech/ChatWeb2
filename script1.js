@@ -634,13 +634,14 @@ function addPostToDOM(post) {
     // Xử lý nội dung để giữ nguyên xuống dòng
     const formattedContent = post.content ? post.content.replace(/\n/g, '<br>') : '';
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
-        // Thêm phần xử lý Twitter embed
+
+    // Thêm phần xử lý Twitter embed
     const twitterHTML = post.twitterEmbed ? `
         <div class="twitter-embed">
             <blockquote class="twitter-tweet" data-conversation="none">
                 <a href="${post.twitterEmbed.url}"></a>
             </blockquote>
-            <script async src="https://platform.twitter.com/widgets.js"></script>
+            <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
         </div>
     ` : '';
 
