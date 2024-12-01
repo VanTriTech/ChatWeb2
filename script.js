@@ -190,13 +190,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Media Upload Handler
 // Sửa phần xử lý media input
 // Sửa phần xử lý media input để hỗ trợ MKV
-// Sửa lại hàm xử lý media input
 mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
-    
-    // Reset selectedMedia array
-    selectedMedia = [];
-    
     files.forEach(file => {
         const maxSize = 100 * 1024 * 1024; // 100MB
         if (file.size > maxSize) {
@@ -204,45 +199,42 @@ mediaInput.addEventListener('change', function(e) {
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-            selectedMedia.push({
-                type: mediaType,
-                url: e.target.result
-            });
-            updateMediaPreview();
-            updatePostButton();
+        // Kiểm tra và xử lý file MKV
+        if (file.name.toLowerCase().endsWith('.mkv')) {
+            // Chuyển đổi MKV sang định dạng có thể phát được trên web
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const videoBlob = new Blob([e.target.result], { type: 'video/x-matroska' });
+                const videoUrl = URL.createObjectURL(videoBlob);
+                
+                selectedMedia.push({
+                    type: 'video',
+                    url: videoUrl,
+                    file: file,
+                    originalName: file.name
+                });
+                updateMediaPreview();
+                updatePostButton();
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            // Xử lý các file khác như cũ
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+                selectedMedia.push({
+                    type: mediaType,
+                    url: e.target.result,
+                    file: file
+                });
+                updateMediaPreview();
+                updatePostButton();
+            }
+            reader.readAsDataURL(file);
         }
-        reader.readAsDataURL(file);
     });
 });
 
-// Thêm hàm chuyển đổi file thành base64
-function convertFileToBase64(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-}
-// Thêm hàm clear form
-function clearPostForm() {
-    postInput.value = '';
-    postInput.style.height = 'auto';
-    selectedMedia = [];
-    mediaPreview.style.display = 'none';
-    mediaPreview.innerHTML = '';
-    mediaInput.value = '';
-    updatePostButton();
-}
-
-// Sửa lại event listener cho nút đăng
-postButton.addEventListener('click', function() {
-    createPost();
-    clearPostForm();
-});
     // Update Media Preview
 function updateMediaPreview() {
     mediaPreview.innerHTML = selectedMedia.map((media, index) => `
@@ -273,101 +265,45 @@ function updateMediaPreview() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-// Sửa lại hàm createPost
-// Sửa lại hàm createPost đơn giản
-function createPost() {
-    const content = postInput.value.trim();
-    if (!content && selectedMedia.length === 0) return;
+    async function createPost() {
+        const content = postInput.value.trim();
+        if (!content && selectedMedia.length === 0) return;
 
-    const postId = Date.now();
-    const post = {
-        id: postId,
-        content: content,
-        author: {
-            name: profileName,
-            username: profileUsername,
-            avatar: document.querySelector('.profile-avatar img').src
-        },
-        media: selectedMedia,
-        reactions: {
-            likes: 0,
-            hearts: 0,
-            angry: 0
-        },
-        userReactions: {},
-        comments: [],
-        timestamp: new Date().toISOString()
-    };
-
-    // Lưu vào localStorage
-    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    posts.unshift(post);
-    localStorage.setItem('posts', JSON.stringify(posts));
-
-    // Thêm post vào DOM
-    addPostToDOM(post);
-
-    // Reset form
-    clearPostForm();
-}
-        
-        // Reload để cập nhật UI
-        loadPosts();
-
-    } catch (error) {
-        console.error('Lỗi khi tạo bài đăng:', error);
-        alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại.');
-    }
-}
-    // Thêm hàm nén ảnh
-async function compressImage(base64String) {
-    return new Promise((resolve) => {
-        const img = new Image();
-        img.src = base64String;
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Giảm kích thước nếu ảnh quá lớn
-            let width = img.width;
-            let height = img.height;
-            const maxSize = 1200;
-            
-            if (width > maxSize || height > maxSize) {
-                if (width > height) {
-                    height = (height / width) * maxSize;
-                    width = maxSize;
-                } else {
-                    width = (width / height) * maxSize;
-                    height = maxSize;
-                }
-            }
-            
-            canvas.width = width;
-            canvas.height = height;
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // Nén với chất lượng 0.7
-            resolve(canvas.toDataURL('image/jpeg', 0.7));
+        const postId = Date.now();
+        const post = {
+            id: postId,
+            content: content,
+            author: {
+                name: profileName,
+                username: profileUsername,
+                avatar: document.querySelector('.profile-avatar img').src
+            },
+            media: selectedMedia,
+            reactions: {
+                likes: 0,
+                hearts: 0,
+                angry: 0
+            },
+            userReactions: {}, // Lưu reaction của từng user
+            comments: [],
+            timestamp: new Date().toISOString()
         };
-    });
-}
-    // Thêm post vào DOM
-    addPostToDOM(post);
 
-    // Lưu vào localStorage
-    savePost(post);
+        // Add post to DOM
+        addPostToDOM(post);
 
-    // Reset form
-    postInput.value = '';
-    postInput.style.height = 'auto';
-    selectedMedia = [];
-    mediaPreview.style.display = 'none';
-    mediaPreview.innerHTML = '';
-    mediaInput.value = '';
-    updatePostButton();
-}
+        // Save to localStorage
+        savePost(post);
 
+        // Reset form
+        postInput.value = '';
+        postInput.style.height = 'auto';
+        selectedMedia = [];
+        mediaPreview.style.display = 'none';
+        mediaPreview.innerHTML = '';
+        mediaInput.value = '';
+        updatePostButton();
+    }
 
 
     // Initialize Video Players
@@ -397,23 +333,27 @@ async function compressImage(base64String) {
 
 window.deletePost = function(postId) {
     if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
-        // Xóa post từ localStorage
-        const postKey = `post_${postId}`;
-        localStorage.removeItem(postKey);
+        const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+        const postIndex = posts.findIndex(p => p.id === postId);
         
-        // Cập nhật danh sách postIds
-        const postIds = JSON.parse(localStorage.getItem('postIds') || '[]');
-        const updatedPostIds = postIds.filter(id => id !== postId);
-        localStorage.setItem('postIds', JSON.stringify(updatedPostIds));
-        
-        // Xóa khỏi DOM
-        const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-        if (postElement) {
-            postElement.remove();
+        if (postIndex !== -1) {
+            // Xóa post khỏi mảng
+            posts.splice(postIndex, 1);
+            
+            // Cập nhật localStorage
+            localStorage.setItem('posts', JSON.stringify(posts));
+            
+            // Xóa post khỏi DOM
+            const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+            if (postElement) {
+                postElement.remove();
+            }
+          // Cập nhật lại tab Media
+            updateMediaTab();
+            
+            // Thông báo xóa thành công (tùy chọn)
+            console.log('Đã xóa bài viết thành công');
         }
-        
-        // Cập nhật UI
-        updateMediaTab();
     }
 };
 
@@ -476,29 +416,46 @@ function restoreCommentStates() {
 }
 
 // Sửa lại hàm loadPosts
-// Sửa lại hàm loadPosts
 function loadPosts() {
-    const postIds = JSON.parse(localStorage.getItem('postIds') || '[]');
-    const posts = [];
-    
-    postIds.forEach(postId => {
-        const postKey = `post_${postId}`;
-        const postData = localStorage.getItem(postKey);
-        if (postData) {
-            try {
-                const post = JSON.parse(postData);
-                posts.push(post);
-            } catch (e) {
-                console.error(`Lỗi khi load post ${postId}:`, e);
-            }
-        }
-    });
-
+    const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     postsContainer.innerHTML = '';
     
-    posts.forEach(post => {
-        addPostToDOM(post);
+    // Lọc posts theo điều kiện
+    const filteredPosts = posts.filter(post => {
+        // Lọc bỏ posts có @meme
+        if (post.content?.includes("@meme")) return false;
+        
+        // Kiểm tra xem có phải là post của LanYouJin không
+        const isLanYouJinPost = post.content?.toLowerCase().includes("@lanyoujin");
+        
+        // Nếu đang ở tab Media, chỉ hiển thị posts của LanYouJin có media
+        const mediaTab = document.querySelector('#media-section.active');
+        if (mediaTab) {
+            return isLanYouJinPost && post.media?.length > 0;
+        }
+        
+        return true; // Hiển thị tất cả posts không có @meme ở tab Timeline
     });
+    
+    // Xáo trộn mảng posts bằng thuật toán Fisher-Yates
+    for (let i = filteredPosts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [filteredPosts[i], filteredPosts[j]] = [filteredPosts[j], filteredPosts[i]];
+    }
+    
+    // Thêm posts vào DOM
+    filteredPosts.forEach(post => {
+        addPostToDOM(post);
+        setupCommentCollapse(post.id);
+        post.comments?.forEach(comment => {
+            if (comment.replies?.length > 0) {
+                setupReplyCollapse(comment.id);
+            }
+        });
+    });
+    
+    restoreCommentStates();
+    restoreReactionStates();
 }
 
 // Thay đổi phần xử lý comment input
@@ -850,28 +807,31 @@ function addPostToDOM(post) {
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
 function generateMediaGrid(mediaItems) {
-    if (!mediaItems?.length) return '';
+    if (!mediaItems.length) return '';
     
-    return mediaItems.map(media => {
+    let html = '';
+    
+    // Xử lý video riêng
+    mediaItems.forEach(media => {
         if (media.type === 'video') {
-            return `
+            html += `
                 <div class="post-video-frame">
-                    <video controls preload="metadata">
+                    <video controls>
                         <source src="${media.url}" type="video/mp4">
                         <source src="${media.url}" type="video/webm">
-                        <source src="${media.url}" type="video/mkv">
                         Your browser does not support the video tag.
                     </video>
                 </div>
             `;
-        } else {
-            return `
-                <div class="image-container">
-                    <img src="${media.url}" alt="Post image">
-                </div>
-            `;
+        } else if (media.type === 'image') {
+            // Xử lý ảnh như bình thường
+            html += `<div class="image-container">
+                <img src="${media.url}" alt="Post image">
+            </div>`;
         }
-    }).join('');
+    });
+    
+    return html;
 }
     function getMediaGridClass(count) {
         if (count === 1) return 'single-image';
