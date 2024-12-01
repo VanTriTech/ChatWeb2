@@ -191,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function() {
 mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     files.forEach(file => {
-        // Kiểm tra kích thước file
+        // Giới hạn kích thước: 100MB cho video, 10MB cho ảnh
         const maxSize = file.type.startsWith('video/') ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
         
         if (file.size > maxSize) {
@@ -199,10 +199,9 @@ mediaInput.addEventListener('change', function(e) {
             return;
         }
 
-        // Đọc file
         const reader = new FileReader();
         reader.onload = function(e) {
-            const mediaType = file.type.startsWith('video/') ? 'video' : 'image';
+            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
             selectedMedia.push({
                 type: mediaType,
                 url: e.target.result,
@@ -216,6 +215,7 @@ mediaInput.addEventListener('change', function(e) {
 });
 
 
+
     // Update Media Preview
 // Cập nhật preview media
 function updateMediaPreview() {
@@ -227,14 +227,13 @@ function updateMediaPreview() {
                     <button class="remove-preview" onclick="removeMedia(${index})">×</button>
                 </div>
             `;
-        } else {
-            return `
-                <div class="preview-item image-preview">
-                    <img src="${media.url}" alt="Preview">
-                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-                </div>
-            `;
         }
+        return `
+            <div class="preview-item image-preview">
+                <img src="${media.url}" alt="Preview">
+                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+            </div>
+        `;
     }).join('');
 
     mediaPreview.innerHTML = previewHTML;
@@ -818,15 +817,12 @@ function generateMediaGrid(mediaItems) {
         if (media.type === 'video') {
             html += `
                 <div class="video-container">
-                    <video src="${media.url}" controls playsinline>
-                        Trình duyệt của bạn không hỗ trợ video.
-                    </video>
+                    <video src="${media.url}" controls playsinline></video>
                 </div>
             `;
         } else {
-            const imageData = encodeURIComponent(JSON.stringify(
-                mediaItems.filter(m => m.type === 'image').map(m => m.url)
-            ));
+            const imageUrls = mediaItems.filter(m => m.type === 'image').map(m => m.url);
+            const imageData = encodeURIComponent(JSON.stringify(imageUrls));
             html += `
                 <div class="image-container" onclick="openImageModal('${media.url}', ${index}, '${imageData}')">
                     <img src="${media.url}" alt="Post image">
@@ -1756,13 +1752,10 @@ function handleTwitterEmbed(url) {
 }
 
 // Cập nhật hàm createPost
+// Hàm tạo bài đăng mới
 async function createPost() {
     const content = postInput.value.trim();
-    
-    // Kiểm tra nếu có URL Twitter trong nội dung
-    const twitterEmbed = handleTwitterEmbed(content);
-    
-    if (!content && selectedMedia.length === 0 && !twitterEmbed) return;
+    if (!content && selectedMedia.length === 0) return;
 
     const postId = Date.now();
     const post = {
@@ -1773,13 +1766,27 @@ async function createPost() {
             username: profileUsername,
             avatar: document.querySelector('.profile-avatar img').src
         },
-        media: selectedMedia,
-        twitterEmbed: twitterEmbed,
+        media: [], // Khởi tạo mảng media trống
         likes: 0,
         likes2: 0,
         comments: [],
         timestamp: new Date().toISOString()
     };
+    // Xử lý media
+    for (let media of selectedMedia) {
+        if (media.type === 'video') {
+            post.media.push({
+                type: 'video',
+                url: media.url,
+                thumbnail: media.url // Có thể thêm thumbnail cho video nếu cần
+            });
+        } else {
+            post.media.push({
+                type: 'image',
+                url: media.url
+            });
+        }
+    }
 
     // Thêm post vào DOM và lưu
     addPostToDOM(post);
@@ -1787,7 +1794,40 @@ async function createPost() {
     
     // Reset form
     postInput.value = '';
+    postInput.style.height = 'auto';
     selectedMedia = [];
     mediaPreview.style.display = 'none';
     mediaPreview.innerHTML = '';
+    mediaInput.value = '';
+    updatePostButton();
+    // Cập nhật tab Media nếu cần
+    if (document.querySelector('#media-section.active')) {
+        updateMediaTab();
+    }
 }
+    let mediaHTML = '';
+    if (post.media && post.media.length > 0) {
+        mediaHTML = '<div class="post-media ' + 
+            (post.media.length === 1 ? 'single-media' : 'multiple-media') + '">';
+        
+        post.media.forEach((media, index) => {
+            if (media.type === 'video') {
+                mediaHTML += `
+                    <div class="video-container">
+                        <video controls playsinline>
+                            <source src="${media.url}" type="video/mp4">
+                            Trình duyệt của bạn không hỗ trợ video.
+                        </video>
+                    </div>`;
+            } else {
+                const imageData = encodeURIComponent(JSON.stringify(
+                    post.media.filter(m => m.type === 'image').map(m => m.url)
+                ));
+                mediaHTML += `
+                    <div class="image-container" onclick="openImageModal('${media.url}', ${index}, '${imageData}')">
+                        <img src="${media.url}" alt="Post image">
+                    </div>`;
+            }
+        });
+        mediaHTML += '</div>';
+    }
