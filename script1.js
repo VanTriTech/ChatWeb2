@@ -393,23 +393,30 @@ function restoreCommentStates() {
 // Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    
-    // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Lọc bỏ posts có @18+ và xáo trộn ngẫu nhiên
-    const filteredPosts = posts.filter(post => !post.content?.includes("@18+"));
+    // Lọc posts theo điều kiện
+    const filteredPosts = posts.filter(post => {
+        // Lọc bỏ posts có @18+
+        if (post.content?.includes("@18+")) return false;
+        
+        // Kiểm tra xem có phải là post của LanYouJin không
+        const isLanYouJinPost = post.content?.toLowerCase().includes("@lanyoujin");
+        
+        // Nếu đang ở tab Media, chỉ hiển thị posts của LanYouJin có media
+        const mediaTab = document.querySelector('#media-section.active');
+        if (mediaTab) {
+            return isLanYouJinPost && post.media?.length > 0;
+        }
+        
+        return true; // Hiển thị tất cả posts không có @18+ ở tab Timeline
+    });
     
-    // Tạo mảng chỉ số và xáo trộn nó thay vì xáo trộn trực tiếp mảng posts
-    const indices = Array.from({length: filteredPosts.length}, (_, i) => i);
-    for (let i = indices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [indices[i], indices[j]] = [indices[j], indices[i]];
-    }
+    // Sắp xếp theo thời gian mới nhất
+    filteredPosts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
-    // Sử dụng mảng chỉ số đã xáo trộn để thêm posts vào DOM
-    indices.forEach(index => {
-        const post = filteredPosts[index];
+    // Thêm posts vào DOM
+    filteredPosts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
         post.comments?.forEach(comment => {
