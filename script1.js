@@ -862,6 +862,7 @@ function generateMediaGrid(mediaItems) {
 
     mediaItems.forEach(media => {
         if (media.type === 'image') {
+            // Xử lý ảnh như cũ
             const imageData = encodeURIComponent(JSON.stringify([media]));
             html += `
                 <div class="image-container" onclick="openImageModal('${media.url}', 0, '${imageData}')">
@@ -869,11 +870,13 @@ function generateMediaGrid(mediaItems) {
                 </div>
             `;
         } else if (media.type === 'twitter-video') {
+            // Thêm container cho video X.com
             html += `
-                <div class="twitter-preview">
-                    <iframe src="${media.embedUrl}" 
-                            allowfullscreen>
-                    </iframe>
+                <div class="twitter-video-container">
+                    <blockquote class="twitter-tweet">
+                        <a href="${media.url}"></a>
+                    </blockquote>
+                    <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
                 </div>
             `;
         }
@@ -1811,10 +1814,10 @@ function addTwitterVideo() {
         return;
     }
     
+    // Thêm video vào selectedMedia
     selectedMedia.push({
         type: 'twitter-video',
-        url: url,
-        embedUrl: getTwitterEmbedUrl(url)
+        url: url
     });
     
     updateMediaPreview();
@@ -1828,6 +1831,8 @@ function cancelTwitterInput() {
     if (container) {
         container.remove();
     }
+    // Hiển thị thông báo thành công
+    alert('Đã thêm video thành công!');
 }
 
 // Hàm kiểm tra link X.com
