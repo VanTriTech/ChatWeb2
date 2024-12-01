@@ -631,6 +631,78 @@ function addPostToDOM(post) {
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
+   // Thêm phần xử lý Twitter embed
+    const twitterEmbedHTML = post.twitterEmbed ? `
+        <div class="twitter-embed-container">
+            ${post.twitterEmbed}
+        </div>
+    ` : '';
+
+    postElement.innerHTML = `
+        <img src="${post.author.avatar}" alt="Avatar" class="post-avatar">
+        <div class="post-content">
+            <div class="post-header">
+                <div class="post-info">
+                    <span class="post-name">${post.author.name}</span>
+                    <span class="post-username">${post.author.username}</span>
+                    <span class="post-time">${formatTime(post.timestamp)}</span>
+                </div>
+                <div class="post-menu">
+                    <button class="post-menu-button" onclick="togglePostMenu(${post.id})">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </button>
+                    <div class="post-menu-dropdown" id="menu-${post.id}">
+                        <div class="post-menu-item edit" onclick="editPost(${post.id})">
+                            <i class="fas fa-edit"></i>
+                            Chỉnh sửa
+                        </div>
+                        <div class="post-menu-item edit-reactions" onclick="editPostReactions(${post.id})">
+                            <i class="fas fa-heart"></i>
+                            Sửa reactions
+                        </div>
+                        <div class="post-menu-item delete" onclick="deletePost(${post.id})">
+                            <i class="fas fa-trash"></i>
+                            Xóa
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="post-text-container">
+                ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
+            </div>
+            ${mediaHTML}
+            ${twitterEmbedHTML}
+            <div class="post-actions">
+                <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
+                    <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
+                    <span class="like-count">${post.likes || 0}</span>
+                </button>
+                <button class="action-button like2-button ${post.userLiked2 ? 'liked' : ''}" onclick="toggleLike2(${post.id})">
+                    <i class="${post.userLiked2 ? 'fas' : 'far'} fa-thumbs-up"></i>
+                    <span class="like2-count">${post.likes2 || 0}</span>
+                </button>
+                <button class="action-button" onclick="toggleComments(${post.id})">
+                    <i class="far fa-comment"></i>
+                    <span class="comment-count">${post.comments ? post.comments.length : 0}</span>
+                </button>
+            </div>
+            <div class="comments-section" id="comments-${post.id}">
+                <div class="comment-form">
+                    <textarea class="comment-input" 
+                              placeholder="Viết bình luận..." 
+                              onkeydown="handleComment(event, ${post.id})"
+                              oninput="autoResizeTextarea(this)"></textarea>
+                </div>
+                <div class="comment-list">
+                    ${generateCommentsHTML(post.comments)}
+                </div>
+            </div>
+        </div>
+    `;
+
+    postsContainer.insertBefore(postElement, postsContainer.firstChild);
+    updateMediaTab();
+}
     // Xử lý nội dung để giữ nguyên xuống dòng
     const formattedContent = post.content ? post.content.replace(/\n/g, '<br>') : '';
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
