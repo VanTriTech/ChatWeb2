@@ -188,34 +188,22 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
- mediaInput.addEventListener('change', function(e) {
+mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
-    const maxFileSize = 50 * 1024 * 1024; // Tăng giới hạn lên 50MB
     
     files.forEach(file => {
-        if (file.size > maxFileSize) {
-            alert('File quá lớn. Vui lòng chọn file nhỏ hơn 50MB.');
-            return;
-        }
-
         const reader = new FileReader();
+        
         reader.onload = function(e) {
-            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-            
-            // Xử lý đặc biệt cho video
-            if (mediaType === 'video') {
-                // Tạo blob URL thay vì base64
-                const blob = new Blob([file], { type: file.type });
-                const blobUrl = URL.createObjectURL(blob);
-                
+            if (file.type.startsWith('video/')) {
+                // Xử lý video
                 selectedMedia.push({
                     type: 'video',
-                    url: blobUrl,
-                    file: file,
-                    originalName: file.name
+                    url: e.target.result,
+                    file: file
                 });
             } else {
-                // Xử lý image như bình thường
+                // Xử lý image như cũ
                 selectedMedia.push({
                     type: 'image',
                     url: e.target.result,
@@ -225,26 +213,19 @@ document.addEventListener('DOMContentLoaded', function() {
             updateMediaPreview();
             updatePostButton();
         };
-
-        if (file.type.startsWith('video/')) {
-            reader.readAsArrayBuffer(file); // Đọc video dưới dạng ArrayBuffer
-        } else {
-            reader.readAsDataURL(file); // Đọc image dưới dạng base64
-        }
+        
+        // Đọc file dưới dạng DataURL cho cả image và video
+        reader.readAsDataURL(file);
     });
 });
+
 
 function updateMediaPreview() {
     mediaPreview.innerHTML = selectedMedia.map((media, index) => {
         if (media.type === 'video') {
             return `
-                <div class="preview-item video-preview">
-                    <video src="${media.url}" 
-                           controls
-                           preload="metadata"
-                           controlsList="nodownload"
-                           playsinline>
-                    </video>
+                <div class="preview-item">
+                    <video src="${media.url}" controls></video>
                     <button class="remove-preview" onclick="removeMedia(${index})">×</button>
                 </div>
             `;
