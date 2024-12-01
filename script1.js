@@ -398,12 +398,18 @@ function loadPosts() {
     postsContainer.innerHTML = '';
     
     // Lọc bỏ posts có @18+ và xáo trộn ngẫu nhiên
-    const shuffledPosts = posts
-        .filter(post => !post.content?.includes("@18+"))
-        .sort(() => Math.random() - 0.5); // Sắp xếp ngẫu nhiên
-
-    // Thêm các bài đăng vào DOM
-    shuffledPosts.forEach(post => {
+    const filteredPosts = posts.filter(post => !post.content?.includes("@18+"));
+    
+    // Tạo mảng chỉ số và xáo trộn nó thay vì xáo trộn trực tiếp mảng posts
+    const indices = Array.from({length: filteredPosts.length}, (_, i) => i);
+    for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+    
+    // Sử dụng mảng chỉ số đã xáo trộn để thêm posts vào DOM
+    indices.forEach(index => {
+        const post = filteredPosts[index];
         addPostToDOM(post);
         setupCommentCollapse(post.id);
         post.comments?.forEach(comment => {
@@ -416,7 +422,6 @@ function loadPosts() {
     restoreCommentStates();
     restoreReactionStates();
 }
-
 
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
