@@ -815,11 +815,11 @@ function generateMediaGrid(mediaItems) {
     let gridClass = getMediaGridClass(mediaItems.length);
     let html = `<div class="post-media ${gridClass}">`;
 
-    // Xử lý videos
+    // Xử lý videos - đặt trong post-media
     videoItems.forEach(video => {
         html += `
             <div class="video-container">
-                <video controls crossorigin="anonymous">
+                <video controls style="width: 100%; max-width: 400px; max-height: 300px;">
                     <source src="${video.url}" type="video/x-matroska">
                     <source src="${video.url}" type="video/mp4">
                     <source src="${video.url}" type="video/webm">
