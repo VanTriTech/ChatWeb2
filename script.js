@@ -730,11 +730,10 @@ function addPostToDOM(post) {
         Xóa
     </div>
 </div>
-            ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
 
                 </div>
             </div>
-        ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
+            ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
             ${mediaHTML}
     <div class="post-actions">
         <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
