@@ -188,28 +188,37 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
-    mediaInput.addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        files.forEach(file => {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
-                return;
-            }
+mediaInput.addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+        // Tăng giới hạn kích thước file lên 50MB cho video
+        const maxSize = file.type.startsWith('video/') ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+        
+        if (file.size > maxSize) {
+            alert(`File quá lớn. Giới hạn: ${maxSize/(1024*1024)}MB`);
+            return;
+        }
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-                selectedMedia.push({
-                    type: mediaType,
-                    url: e.target.result,
-                    file: file
-                });
-                updateMediaPreview();
-                updatePostButton();
-            }
-            reader.readAsDataURL(file);
-        });
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+            
+            // Lưu thêm thông tin về file gốc
+            selectedMedia.push({
+                type: mediaType,
+                url: e.target.result,
+                file: file,
+                fileName: file.name,
+                fileSize: file.size,
+                fileType: file.type
+            });
+            
+            updateMediaPreview();
+            updatePostButton();
+        }
+        reader.readAsDataURL(file);
     });
+});
 
     // Update Media Preview
     function updateMediaPreview() {
@@ -244,21 +253,13 @@ async function createPost() {
     const content = postInput.value.trim();
     if (!content && selectedMedia.length === 0) return;
 
-    // Xử lý media trước khi tạo post
-    const processedMedia = [];
-    for (const media of selectedMedia) {
-        if (media.type === 'video') {
-            // Với video, lưu trực tiếp URL
-            processedMedia.push({
-                type: 'video',
-                url: media.url
-            });
-        } else {
-            // Với ảnh, giữ nguyên như cũ
-            processedMedia.push(media);
-        }
-    }
-
+    const processedMedia = selectedMedia.map(media => ({
+        type: media.type,
+        url: media.url,
+        fileName: media.fileName,
+        fileSize: media.fileSize,
+        fileType: media.fileType
+    }));
     const post = {
         id: Date.now(),
         content: content,
@@ -278,12 +279,23 @@ async function createPost() {
         timestamp: new Date().toISOString()
     };
 
-    // Thêm post vào DOM và lưu
-    addPostToDOM(post);
-    savePost(post);
+        // Thêm post vào DOM và lưu
+        addPostToDOM(post);
+        savePost(post);
     
-    // Reset form
-    resetPostForm();
+        // Reset form
+        postInput.value = '';
+        postInput.style.height = 'auto';
+        selectedMedia = [];
+        mediaPreview.style.display = 'none';
+        mediaPreview.innerHTML = '';
+        mediaInput.value = '';
+        updatePostButton();
+        
+    } catch (error) {
+        console.error('Lỗi khi tạo bài đăng:', error);
+        alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại.');
+    }
 }
 // Thêm hàm reset form mới này
 function resetPostForm() {
