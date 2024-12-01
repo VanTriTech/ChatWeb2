@@ -405,7 +405,7 @@ function loadPosts() {
             if (!post.content) return true; // Giữ lại post không có content
             return !post.content.includes("@18+"); // Lọc bỏ post có "@18+"
         })
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+        .sort(() => Math.random() - 0.5);
         .forEach(post => {
             addPostToDOM(post);
             setupCommentCollapse(post.id);
