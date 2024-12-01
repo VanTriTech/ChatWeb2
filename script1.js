@@ -190,28 +190,46 @@ document.addEventListener('DOMContentLoaded', function() {
     // Media Upload Handler
 // Hàm xử lý khi chọn video
 // Hàm xử lý khi chọn media
+// Hàm xử lý khi chọn media
 mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
+    
     files.forEach(file => {
         // Kiểm tra kích thước file
-        if (file.size > 100 * 1024 * 1024) { // Giới hạn 100MB
+        if (file.size > 100 * 1024 * 1024) {
             alert('File quá lớn. Vui lòng chọn file nhỏ hơn 100MB');
             return;
         }
 
+        // Xử lý video
         if (file.type.startsWith('video/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
+            // Tạo URL tạm thời cho video
+            const videoURL = URL.createObjectURL(file);
+            
+            // Tạo video element để lấy metadata
+            const video = document.createElement('video');
+            video.src = videoURL;
+            
+            video.onloadedmetadata = function() {
                 selectedMedia.push({
                     type: 'video',
-                    url: e.target.result,
-                    file: file
+                    url: videoURL,
+                    file: file,
+                    duration: video.duration,
+                    width: video.videoWidth,
+                    height: video.videoHeight
                 });
                 updateMediaPreview();
                 updatePostButton();
             };
-            reader.readAsDataURL(file);
-        } else if (file.type.startsWith('image/')) {
+
+            video.onerror = function() {
+                alert('Không thể tải video. Vui lòng thử lại.');
+                URL.revokeObjectURL(videoURL);
+            };
+        }
+        // Xử lý ảnh giữ nguyên
+        else if (file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = function(e) {
                 selectedMedia.push({
@@ -272,6 +290,7 @@ async function createPost() {
     const content = postInput.value.trim();
     if (!content && selectedMedia.length === 0) return;
 
+    // Tạo post object
     const postId = Date.now();
     const post = {
         id: postId,
@@ -284,10 +303,10 @@ async function createPost() {
         media: selectedMedia.map(media => ({
             type: media.type,
             url: media.url,
-            // Thêm thông tin bổ sung cho video
             ...(media.type === 'video' && {
-                thumbnail: media.thumbnail,
-                duration: media.duration
+                duration: media.duration,
+                width: media.width,
+                height: media.height
             })
         })),
         likes: 0,
@@ -296,12 +315,9 @@ async function createPost() {
         timestamp: new Date().toISOString()
     };
 
-
-        // Add post to DOM
-        addPostToDOM(post);
-
-        // Save to localStorage
-        savePost(post);
+    // Thêm post vào DOM và lưu
+    addPostToDOM(post);
+    savePost(post);
 
     // Reset form
     postInput.value = '';
