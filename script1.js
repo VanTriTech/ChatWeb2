@@ -391,30 +391,27 @@ function restoreCommentStates() {
 }
 
 // Sửa lại hàm loadPosts
-// Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Sắp xếp posts theo thời gian mới nhất và lọc bỏ các post có chính xác chữ "@18+"
-    posts
-        .filter(post => {
-            // Kiểm tra nếu content tồn tại và chứa chính xác chuỗi "@18+"
-            if (!post.content) return true; // Giữ lại post không có content
-            return !post.content.includes("@18+"); // Lọc bỏ post có "@18+"
-        })
-        .sort(() => Math.random() - 0.5);
-        .forEach(post => {
-            addPostToDOM(post);
-            setupCommentCollapse(post.id);
-            post.comments.forEach(comment => {
-                if (comment.replies && comment.replies.length > 0) {
-                    setupReplyCollapse(comment.id);
-                }
-            });
+    // Lọc bỏ posts có @18+ và xáo trộn ngẫu nhiên
+    const shuffledPosts = posts
+        .filter(post => !post.content?.includes("@18+"))
+        .sort(() => Math.random() - 0.5); // Sắp xếp ngẫu nhiên
+
+    // Thêm các bài đăng vào DOM
+    shuffledPosts.forEach(post => {
+        addPostToDOM(post);
+        setupCommentCollapse(post.id);
+        post.comments?.forEach(comment => {
+            if (comment.replies?.length > 0) {
+                setupReplyCollapse(comment.id);
+            }
         });
+    });
     
     restoreCommentStates();
     restoreReactionStates();
