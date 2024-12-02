@@ -391,18 +391,21 @@ function restoreCommentStates() {
 }
 
 // Sửa lại hàm loadPosts
-// Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Lọc các bài viết có @LanAuKim và sắp xếp theo thời gian mới nhất
+    // Lọc các bài viết KHÔNG có @LanAuKim và sắp xếp theo thời gian mới nhất
     const filteredPosts = posts
         .filter(post => {
-            // Chỉ hiện bài viết có nội dung và có chứa @LanAuKim
-            return post.content && typeof post.content === 'string' && post.content.includes('@LanAuKim');
+            // Nếu không có nội dung, cho phép hiển thị
+            if (!post.content) return true;
+            
+            // Nếu có nội dung, kiểm tra xem có chứa @LanAuKim không
+            // Trả về true nếu KHÔNG chứa @LanAuKim (ngược lại với logic cũ)
+            return !post.content.includes('@LanAuKim');
         })
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
