@@ -413,10 +413,7 @@ function loadPosts() {
     });
     
     // Xáo trộn mảng posts bằng thuật toán Fisher-Yates
-    for (let i = filteredPosts.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [filteredPosts[i], filteredPosts[j]] = [filteredPosts[j], filteredPosts[i]];
-    }
+    posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
     // Thêm posts vào DOM
     filteredPosts.forEach(post => {
