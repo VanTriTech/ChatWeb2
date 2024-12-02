@@ -188,67 +188,49 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
-mediaInput.addEventListener('change', function(e) {
-    const files = Array.from(e.target.files);
-    
-    files.forEach(file => {
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            if (file.type.startsWith('video/')) {
-                // Xử lý video
-                selectedMedia.push({
-                    type: 'video',
-                    url: e.target.result,
-                    file: file
-                });
-            } else {
-                // Xử lý image như cũ
-                selectedMedia.push({
-                    type: 'image',
-                    url: e.target.result,
-                    file: file
-                });
+    mediaInput.addEventListener('change', function(e) {
+        const files = Array.from(e.target.files);
+        files.forEach(file => {
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
+                alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
+                return;
             }
-            updateMediaPreview();
-            updatePostButton();
-        };
-        
-        // Đọc file dưới dạng DataURL cho cả image và video
-        reader.readAsDataURL(file);
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+                selectedMedia.push({
+                    type: mediaType,
+                    url: e.target.result,
+                    file: file
+                });
+                updateMediaPreview();
+                updatePostButton();
+            }
+            reader.readAsDataURL(file);
+        });
     });
-});
 
-
-function updateMediaPreview() {
-    mediaPreview.innerHTML = selectedMedia.map((media, index) => {
-        if (media.type === 'video') {
-            return `
-                <div class="preview-item">
-                    <video src="${media.url}" controls></video>
-                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-                </div>
-            `;
-        } else {
-            return `
-                <div class="preview-item">
-                    <img src="${media.url}" alt="Preview">
-                    <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-                </div>
-            `;
-        }
-    }).join('');
-    mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
-}
-
-window.removeMedia = function(index) {
-    if (selectedMedia[index].type === 'video') {
-        URL.revokeObjectURL(selectedMedia[index].url); // Giải phóng blob URL
+    // Update Media Preview
+    function updateMediaPreview() {
+        mediaPreview.innerHTML = selectedMedia.map((media, index) => `
+            <div class="preview-item">
+                ${media.type === 'image' 
+                    ? `<img src="${media.url}" alt="Preview">`
+                    : `<video src="${media.url}" controls></video>`
+                }
+                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+            </div>
+        `).join('');
+        mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
     }
-    selectedMedia.splice(index, 1);
-    updateMediaPreview();
-    updatePostButton();
-};
+
+    // Remove Media
+    window.removeMedia = function(index) {
+        selectedMedia.splice(index, 1);
+        updateMediaPreview();
+        updatePostButton();
+    }
 
     // Update Post Button State
     function updatePostButton() {
@@ -258,29 +240,29 @@ window.removeMedia = function(index) {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-async function createPost() {
-    const content = postInput.value.trim();
-    if (!content && selectedMedia.length === 0) return;
+    async function createPost() {
+        const content = postInput.value.trim();
+        if (!content && selectedMedia.length === 0) return;
 
-    const postId = Date.now();
-    const post = {
-        id: postId,
-        content: content,
-        author: {
-            name: profileName,
-            username: profileUsername,
-            avatar: document.querySelector('.profile-avatar img').src
-        },
-        media: selectedMedia,
-        reactions: {
-            likes: 0,
-            hearts: 0,
-            angry: 0
-        },
-        userReactions: {},
-        comments: [],
-        timestamp: new Date().toISOString()
-    };
+        const postId = Date.now();
+        const post = {
+            id: postId,
+            content: content,
+            author: {
+                name: profileName,
+                username: profileUsername,
+                avatar: document.querySelector('.profile-avatar img').src
+            },
+            media: selectedMedia,
+            reactions: {
+                likes: 0,
+                hearts: 0,
+                angry: 0
+            },
+            userReactions: {}, // Lưu reaction của từng user
+            comments: [],
+            timestamp: new Date().toISOString()
+        };
 
         // Add post to DOM
         addPostToDOM(post);
@@ -288,44 +270,36 @@ async function createPost() {
         // Save to localStorage
         savePost(post);
 
-    // Reset form
-    postInput.value = '';
-    postInput.style.height = 'auto';
-    selectedMedia = [];
-    mediaPreview.style.display = 'none';
-    mediaPreview.innerHTML = '';
-    mediaInput.value = '';
-    updatePostButton();
-    // Thêm dòng này ở cuối hàm createPost
-    initializeVideos();
-}
+        // Reset form
+        postInput.value = '';
+        postInput.style.height = 'auto';
+        selectedMedia = [];
+        mediaPreview.style.display = 'none';
+        mediaPreview.innerHTML = '';
+        mediaInput.value = '';
+        updatePostButton();
+    }
 
 
-function initializeVideos() {
-    const videos = document.querySelectorAll('.video-container video');
-    videos.forEach(video => {
-        // Xử lý lỗi video
-        video.addEventListener('error', function(e) {
-            console.error('Video error:', e);
-            // Thử tải lại video
-            video.load();
-        });
-
-        // Lưu trạng thái video
-        video.addEventListener('pause', function() {
-            const currentTime = video.currentTime;
-            video.setAttribute('data-timestamp', currentTime);
-        });
-
-        // Khôi phục trạng thái video
-        video.addEventListener('loadedmetadata', function() {
-            const savedTime = video.getAttribute('data-timestamp');
-            if (savedTime) {
-                video.currentTime = parseFloat(savedTime);
+    // Initialize Video Players
+    function initializeVideoPlayers() {
+        const videos = document.querySelectorAll('.video-player');
+        videos.forEach(video => {
+            if (!video.hasAttribute('data-initialized')) {
+                video.setAttribute('data-initialized', 'true');
+                
+                // Add custom controls if needed
+                video.addEventListener('play', function() {
+                    // Handle play event
+                });
+                
+                video.addEventListener('pause', function() {
+                    // Handle pause event
+                });
             }
         });
-    });
-}
+    }
+
     // Post Actions
     window.togglePostMenu = function(postId) {
         const menu = document.getElementById(`menu-${postId}`);
@@ -423,14 +397,8 @@ function loadPosts() {
     
     // Lọc posts theo điều kiện
     const filteredPosts = posts.filter(post => {
+        // Lọc bỏ posts có @meme
         if (post.content?.includes("@meme")) return false;
-        const isLanYouJinPost = post.content?.toLowerCase().includes("@lanyoujin");
-        const mediaTab = document.querySelector('#media-section.active');
-        if (mediaTab) {
-            return isLanYouJinPost && post.media?.length > 0;
-        }
-        return true;
-    });
         
         // Kiểm tra xem có phải là post của LanYouJin không
         const isLanYouJinPost = post.content?.toLowerCase().includes("@lanyoujin");
@@ -463,9 +431,6 @@ function loadPosts() {
     
     restoreCommentStates();
     restoreReactionStates();
-    
-    // Thêm dòng này ở cuối hàm loadPosts
-    initializeVideos();
 }
 
 // Thay đổi phần xử lý comment input
@@ -649,22 +614,7 @@ function formatTime(timestamp) {
 
 function savePost(post) {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    
-    // Chuyển đổi Blob URL thành base64 trước khi lưu
-    if (post.media && post.media.length) {
-        post.media = post.media.map(media => {
-            if (media.type === 'video') {
-                // Tạo một bản sao của media object
-                const mediaCopy = {...media};
-                // Lưu URL gốc vào một thuộc tính mới
-                mediaCopy.originalUrl = media.url;
-                return mediaCopy;
-            }
-            return media;
-        });
-    }
-    
-    posts.unshift(post);
+    posts.unshift(post); // Thêm post mới vào đầu mảng
     localStorage.setItem('posts', JSON.stringify(posts));
 }
 
@@ -831,7 +781,7 @@ function addPostToDOM(post) {
 
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
-    function generateMediaGrid(mediaItems) {
+function generateMediaGrid(mediaItems) {
         if (!mediaItems.length) return '';
 
         const imageItems = mediaItems.filter(item => item.type === 'image');
@@ -840,29 +790,21 @@ function addPostToDOM(post) {
         let gridClass = getMediaGridClass(mediaItems.length);
         let html = `<div class="post-media ${gridClass}">`;
 
-        // Xử lý videos - thêm các thuộc tính quan trọng
+        // Xử lý videos
         videoItems.forEach(video => {
             html += `
                 <div class="video-container">
-                    <video 
-                        src="${video.url}" 
-                        controls
-                        preload="metadata"
-                        controlsList="nodownload" 
-                        disablePictureInPicture
-                        playsinline
-                        onloadedmetadata="this.currentTime = 0;"
-                    >
-                        Trình duyệt của bạn không hỗ trợ video.
-                    </video>
+                    <video src="${video.url}" controls></video>
                 </div>
             `;
         });
 
-        // Xử lý images
-        imageItems.forEach(image => {
+        // Xử lý tất cả ảnh, không giới hạn số lượng
+        const imageUrls = imageItems.map(img => img.url);
+        imageItems.forEach((image, index) => {
+            const imageData = encodeURIComponent(JSON.stringify(imageUrls));
             html += `
-                <div class="image-container">
+                <div class="image-container" onclick="openImageModal('${image.url}', ${index}, '${imageData}')">
                     <img src="${image.url}" alt="Post image">
                 </div>
             `;
@@ -871,7 +813,7 @@ function addPostToDOM(post) {
         html += '</div>';
         return html;
     }
-}
+
     function getMediaGridClass(count) {
         if (count === 1) return 'single-image';
         if (count === 2) return 'two-images';
@@ -1771,47 +1713,4 @@ function restoreData(event) {
         }
     };
     reader.readAsText(file);
-}
-function addGitHubVideo() {
-    const videoUrl = prompt("Nhập GitHub raw URL của video:");
-    if (videoUrl && videoUrl.trim()) {
-        // Log để kiểm tra URL
-        console.log("Video URL:", videoUrl);
-        
-        // Kiểm tra URL kỹ hơn
-        if (!videoUrl.includes('raw.githubusercontent.com')) {
-            alert('URL không hợp lệ! URL phải có dạng: https://raw.githubusercontent.com/...');
-            return;
-        }
-
-        // Kiểm tra video có load được không
-        const testVideo = document.createElement('video');
-        testVideo.src = videoUrl;
-        testVideo.onloadeddata = () => {
-            // Video load thành công
-            const videoPreview = `
-                <div class="preview-item video-preview">
-                    <video src="${videoUrl}" controls>
-                        Your browser does not support the video tag.
-                    </video>
-                    <button class="remove-preview" onclick="removeMedia(0)">×</button>
-                </div>
-            `;
-
-            const mediaPreview = document.querySelector('.media-preview');
-            mediaPreview.innerHTML = videoPreview;
-            mediaPreview.style.display = 'grid';
-
-            selectedMedia = [{
-                type: 'video',
-                url: videoUrl
-            }];
-
-            updatePostButton();
-        };
-
-        testVideo.onerror = () => {
-            alert('Không thể load video. Vui lòng kiểm tra lại URL!');
-        };
-    }
 }
