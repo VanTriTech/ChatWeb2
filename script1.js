@@ -397,8 +397,8 @@ function loadPosts() {
     
     // Lọc posts theo điều kiện
     const filteredPosts = posts.filter(post => {
-        // Lọc bỏ posts có @meme
-        if (post.content?.includes("@meme")) return false;
+        // Lọc bỏ posts có @18+
+        if (post.content?.includes("@18+")) return false;
         
         // Kiểm tra xem có phải là post của LanYouJin không
         const isLanYouJinPost = post.content?.toLowerCase().includes("@lanyoujin");
@@ -409,7 +409,7 @@ function loadPosts() {
             return isLanYouJinPost && post.media?.length > 0;
         }
         
-        return true; // Hiển thị tất cả posts không có @meme ở tab Timeline
+        return true; // Hiển thị tất cả posts không có @18+ ở tab Timeline
     });
     
     // Xáo trộn mảng posts bằng thuật toán Fisher-Yates
@@ -624,8 +624,8 @@ let currentImageIndex = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
-    // Kiểm tra nếu nội dung có chứa chính xác "@meme"
-    if (post.content && post.content.includes("@meme")) {
+    // Kiểm tra nếu nội dung có chứa chính xác "@18+"
+    if (post.content && post.content.includes("@18+")) {
         return;
     }
     const postElement = document.createElement('div');
