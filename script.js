@@ -412,7 +412,7 @@ function loadPosts() {
         return true; // Hiển thị tất cả posts không có @meme ở tab Timeline
     });
     
-    posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
     // Thêm posts vào DOM
     filteredPosts.forEach(post => {
