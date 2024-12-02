@@ -397,10 +397,12 @@ function loadPosts() {
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Sắp xếp posts theo thời gian mới nhất
-    posts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    // Sắp xếp posts theo thời gian mới nhất và lọc các bài không có @LanAuKim
+    const filteredPosts = posts
+        .filter(post => post.content && post.content.includes('@LanAuKim'))
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
     
-    posts.forEach(post => {
+    filteredPosts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
         post.comments.forEach(comment => {
@@ -412,7 +414,6 @@ function loadPosts() {
     restoreCommentStates();
     restoreReactionStates();
 }
-
 
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
