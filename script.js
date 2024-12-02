@@ -407,7 +407,7 @@ function loadPosts() {
             // Trả về true nếu KHÔNG chứa @LanAuKim (ngược lại với logic cũ)
             return !post.content.includes('@LanAuKim');
         })
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
     // Hiển thị các bài đã lọc
     filteredPosts.forEach(post => {
