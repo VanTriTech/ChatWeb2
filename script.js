@@ -393,41 +393,26 @@ function restoreCommentStates() {
 // Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
+    
+    // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Lọc posts theo điều kiện
-    const filteredPosts = posts.filter(post => {
-        // Lọc bỏ posts có @meme
-        if (post.content?.includes("@meme")) return false;
-        
-        // Kiểm tra xem có phải là post của LanYouJin không
-        const isLanYouJinPost = post.content?.toLowerCase().includes("@lanyoujin");
-        
-        // Nếu đang ở tab Media, chỉ hiển thị posts của LanYouJin có media
-        const mediaTab = document.querySelector('#media-section.active');
-        if (mediaTab) {
-            return isLanYouJinPost && post.media?.length > 0;
-        }
-        
-        return true; // Hiển thị tất cả posts không có @meme ở tab Timeline
-    });
+    // Sắp xếp posts theo thời gian mới nhất
+    posts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
-    allMedia.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-    
-    // Thêm posts vào DOM
-    filteredPosts.forEach(post => {
+    posts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
-        post.comments?.forEach(comment => {
-            if (comment.replies?.length > 0) {
+        post.comments.forEach(comment => {
+            if (comment.replies && comment.replies.length > 0) {
                 setupReplyCollapse(comment.id);
             }
         });
     });
-    
     restoreCommentStates();
     restoreReactionStates();
 }
+
 
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
@@ -620,15 +605,10 @@ let currentImageIndex = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
-    // Kiểm tra nếu nội dung có chứa chính xác "@meme"
-    if (post.content && post.content.includes("@meme")) {
-        return;
-    }
     const postElement = document.createElement('div');
     postElement.className = 'post';
     postElement.setAttribute('data-post-id', post.id);
-    // Xử lý nội dung để giữ nguyên xuống dòng
-    const formattedContent = post.content ? post.content.replace(/\n/g, '<br>') : '';
+
     const mediaHTML = post.media && post.media.length ? generateMediaGrid(post.media) : '';
     const commentsHTML = post.comments ? post.comments.map(comment => `
         <div class="comment" data-comment-id="${comment.id}">
@@ -722,7 +702,7 @@ function addPostToDOM(post) {
                     <button class="post-menu-button" onclick="togglePostMenu(${post.id})">
                         <i class="fas fa-ellipsis-h"></i>
                     </button>
-                    <div class="post-menu-dropdown" id="menu-${post.id}">
+<div class="post-menu-dropdown" id="menu-${post.id}">
     <div class="post-menu-item edit" onclick="editPost(${post.id})">
         <i class="fas fa-edit"></i>
         Chỉnh sửa
@@ -736,14 +716,11 @@ function addPostToDOM(post) {
         Xóa
     </div>
 </div>
-
                 </div>
             </div>
-            <div class="post-text-container">
-                ${formattedContent ? `<p class="post-text">${formattedContent}</p>` : ''}
-            </div>
+            ${post.content ? `<p class="post-text">${post.content}</p>` : ''}
             ${mediaHTML}
-            <div class="post-actions">
+    <div class="post-actions">
         <button class="action-button like-button ${post.userLiked ? 'liked' : ''}" onclick="toggleLike(${post.id})">
             <i class="${post.userLiked ? 'fas' : 'far'} fa-heart"></i>
             <span class="like-count">${post.likes || 0}</span>
