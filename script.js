@@ -437,7 +437,7 @@ function loadPosts() {
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Lọc các bài đăng có chứa "@LanYouJin" trong nội dung chính của post (không tính comments)
+    // Lọc các bài đăng có chứa "@LanYouJin" trong nội dung chính
     const filteredPosts = posts.filter(post => post.content && post.content.toLowerCase().includes("@lanyoujin"));
     
     // Nếu không có bài nào, hiển thị thông báo
@@ -449,11 +449,6 @@ function loadPosts() {
     filteredPosts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
-        post.comments.forEach(comment => {
-            if (comment.replies && comment.replies.length > 0) {
-                setupReplyCollapse(comment.id);
-            }
-        });
     });
     
     restoreCommentStates();
