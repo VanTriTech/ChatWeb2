@@ -192,7 +192,7 @@ mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
     const promises = files.map(file => {
         return new Promise((resolve, reject) => {
-            if (file.size > 10 * 1024 * 1024) {
+            if (file.size > 10 * 1024 * 1024) { // 10MB limit
                 alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
                 reject('File too large');
                 return;
@@ -203,23 +203,24 @@ mediaInput.addEventListener('change', function(e) {
                 const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
                 
                 if (mediaType === 'video') {
-                    // Tạo video element tạm thời để lấy kích thước
+                    // Tạo video element tạm thời để kiểm tra
                     const video = document.createElement('video');
-                    video.src = e.target.result;
+                    video.preload = 'metadata';
                     
                     video.onloadedmetadata = function() {
                         resolve({
                             type: mediaType,
                             url: e.target.result,
                             file: file,
-                            width: video.videoWidth,
-                            height: video.videoHeight
+                            duration: video.duration
                         });
                     };
                     
                     video.onerror = function() {
                         reject('Invalid video format');
                     };
+                    
+                    video.src = e.target.result;
                 } else {
                     resolve({
                         type: mediaType,
@@ -239,7 +240,7 @@ mediaInput.addEventListener('change', function(e) {
 
     Promise.all(promises.filter(p => p))
         .then(mediaItems => {
-            selectedMedia.push(...mediaItems);
+            selectedMedia = [...selectedMedia, ...mediaItems];
             updateMediaPreview();
             updatePostButton();
         })
@@ -249,18 +250,21 @@ mediaInput.addEventListener('change', function(e) {
 });
 
     // Update Media Preview
-    function updateMediaPreview() {
-        mediaPreview.innerHTML = selectedMedia.map((media, index1) => `
-            <div class="preview-item">
-                ${media.type === 'image' 
-                    ? `<img src="${media.url}" alt="Preview">`
-                    : `<video src="${media.url}" controls></video>`
-                }
-                <button class="remove-preview" onclick="removeMedia(${index1})">×</button>
-            </div>
-        `).join('');
-        mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
-    }
+function updateMediaPreview() {
+    mediaPreview.innerHTML = selectedMedia.map((media, index) => `
+        <div class="preview-item">
+            ${media.type === 'image' 
+                ? `<img src="${media.url}" alt="Preview">`
+                : `<video src="${media.url}" controls preload="metadata">
+                     <source src="${media.url}" type="video/mp4">
+                     Your browser does not support the video tag.
+                   </video>`
+            }
+            <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+        </div>
+    `).join('');
+    mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
+}
 
     // Remove Media
     window.removeMedia = function(index1) {
