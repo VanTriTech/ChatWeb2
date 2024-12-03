@@ -449,6 +449,7 @@ function loadPosts() {
         return;
     }
     
+    // Thêm các bài đăng đã lọc vào DOM
     filteredPosts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
@@ -457,7 +458,6 @@ function loadPosts() {
     restoreCommentStates();
     restoreReactionStates();
 }
-
 // Thay đổi phần xử lý comment input
 window.handleComment = function(event, postId) {
     const input = event.target;
