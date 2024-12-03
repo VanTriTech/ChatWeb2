@@ -440,17 +440,19 @@ function loadPosts() {
     // Lọc các bài đăng có chứa "@LanYouJin" trong nội dung chính
     const filteredPosts = posts.filter(post => post.content && post.content.toLowerCase().includes("@lanyoujin"));
     
+    // Sắp xếp các bài viết mới nhất lên đầu
+    filteredPosts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
     // Nếu không có bài nào, hiển thị thông báo
     if (filteredPosts.length === 0) {
         postsContainer.innerHTML = '<div class="empty-state">Không có bài đăng nào chứa "@LanYouJin".</div>';
         return;
     }
-        allMedia.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
     filteredPosts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
     });
-
     
     restoreCommentStates();
     restoreReactionStates();
