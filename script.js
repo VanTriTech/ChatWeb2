@@ -1576,7 +1576,7 @@ function updateMediaTab() {
     }, []);
     
     // Sắp xếp media theo thời gian mới nhất
-    allMedia.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    allMedia.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
     // Tạo grid hiển thị media
     const mediaGrid = document.createElement('div');
