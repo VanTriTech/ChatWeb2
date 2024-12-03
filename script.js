@@ -20,7 +20,7 @@
                 justify-content: center;
                 align-items: center;
                 font-family: monospace;
-                z-index: 999999999;
+                z-index1: 999999999;
             ">
                 <div style="font-size: 4em; color: #ff0000; text-shadow: 0 0 10px #ff0000; animation: glitch 0.5s infinite;">
                     ⚠️ CRITICAL SECURITY VIOLATION ⚠️
@@ -188,46 +188,87 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
-    mediaInput.addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        files.forEach(file => {
+mediaInput.addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    const promises = files.map(file => {
+        return new Promise((resolve, reject) => {
             if (file.size > 10 * 1024 * 1024) { // 10MB limit
                 alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
+                reject('File too large');
                 return;
             }
 
             const reader = new FileReader();
             reader.onload = function(e) {
                 const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-                selectedMedia.push({
-                    type: mediaType,
-                    url: e.target.result,
-                    file: file
-                });
-                updateMediaPreview();
-                updatePostButton();
-            }
+                
+                if (mediaType === 'video') {
+                    // Tạo video element tạm thời để kiểm tra
+                    const video = document.createElement('video');
+                    video.preload = 'metadata';
+                    
+                    video.onloadedmetadata = function() {
+                        resolve({
+                            type: mediaType,
+                            url: e.target.result,
+                            file: file,
+                            duration: video.duration
+                        });
+                    };
+                    
+                    video.onerror = function() {
+                        reject('Invalid video format');
+                    };
+                    
+                    video.src = e.target.result;
+                } else {
+                    resolve({
+                        type: mediaType,
+                        url: e.target.result,
+                        file: file
+                    });
+                }
+            };
+            
+            reader.onerror = function() {
+                reject('File read error');
+            };
+            
             reader.readAsDataURL(file);
         });
     });
 
+    Promise.all(promises.filter(p => p))
+        .then(mediaItems => {
+            selectedMedia = [...selectedMedia, ...mediaItems];
+            updateMediaPreview();
+            updatePostButton();
+        })
+        .catch(error => {
+            console.error('Error processing media:', error);
+        });
+});
+
     // Update Media Preview
-    function updateMediaPreview() {
-        mediaPreview.innerHTML = selectedMedia.map((media, index) => `
-            <div class="preview-item">
-                ${media.type === 'image' 
-                    ? `<img src="${media.url}" alt="Preview">`
-                    : `<video src="${media.url}" controls></video>`
-                }
-                <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-            </div>
-        `).join('');
-        mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
-    }
+function updateMediaPreview() {
+    mediaPreview.innerHTML = selectedMedia.map((media, index) => `
+        <div class="preview-item">
+            ${media.type === 'image' 
+                ? `<img src="${media.url}" alt="Preview">`
+                : `<video src="${media.url}" controls preload="metadata">
+                     <source src="${media.url}" type="video/mp4">
+                     Your browser does not support the video tag.
+                   </video>`
+            }
+            <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+        </div>
+    `).join('');
+    mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
+}
 
     // Remove Media
-    window.removeMedia = function(index) {
-        selectedMedia.splice(index, 1);
+    window.removeMedia = function(index1) {
+        selectedMedia.splice(index1, 1);
         updateMediaPreview();
         updatePostButton();
     }
@@ -240,45 +281,45 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-    async function createPost() {
-        const content = postInput.value.trim();
-        if (!content && selectedMedia.length === 0) return;
+async function createPost() {
+    const content = postInput.value.trim();
+    if (!content && selectedMedia.length === 0) return;
 
-        const postId = Date.now();
-        const post = {
-            id: postId,
-            content: content,
-            author: {
-                name: profileName,
-                username: profileUsername,
-                avatar: document.querySelector('.profile-avatar img').src
-            },
-            media: selectedMedia,
-            reactions: {
-                likes: 0,
-                hearts: 0,
-                angry: 0
-            },
-            userReactions: {}, // Lưu reaction của từng user
-            comments: [],
-            timestamp: new Date().toISOString()
-        };
+    const postId = Date.now();
+    const post = {
+        id: postId,
+        content: content,
+        author: {
+            name: profileName,
+            username: profileUsername,
+            avatar: document.querySelector('.profile-avatar img').src
+        },
+        media: selectedMedia,
+        reactions: {
+            likes: 0,
+            hearts: 0,
+            angry: 0
+        },
+        userReactions: {},
+        comments: [],
+        timestamp: new Date().toISOString()
+    };
 
-        // Add post to DOM
-        addPostToDOM(post);
+    // Thêm post vào DOM
+    addPostToDOM(post);
 
-        // Save to localStorage
-        savePost(post);
+    // Lưu vào localStorage
+    savePost(post);
 
-        // Reset form
-        postInput.value = '';
-        postInput.style.height = 'auto';
-        selectedMedia = [];
-        mediaPreview.style.display = 'none';
-        mediaPreview.innerHTML = '';
-        mediaInput.value = '';
-        updatePostButton();
-    }
+    // Reset form
+    postInput.value = '';
+    postInput.style.height = 'auto';
+    selectedMedia = [];
+    mediaPreview.style.display = 'none';
+    mediaPreview.innerHTML = '';
+    mediaInput.value = '';
+    updatePostButton();
+}
 
 
     // Initialize Video Players
@@ -309,11 +350,11 @@ document.addEventListener('DOMContentLoaded', function() {
 window.deletePost = function(postId) {
     if (confirm('Bạn có chắc chắn muốn xóa bài viết này?')) {
         const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        const postIndex = posts.findIndex(p => p.id === postId);
+        const postindex1 = posts.findindex1(p => p.id === postId);
         
-        if (postIndex !== -1) {
+        if (postindex1 !== -1) {
             // Xóa post khỏi mảng
-            posts.splice(postIndex, 1);
+            posts.splice(postindex1, 1);
             
             // Cập nhật localStorage
             localStorage.setItem('posts', JSON.stringify(posts));
@@ -390,27 +431,16 @@ function restoreCommentStates() {
     });
 }
 
-// Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
     
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Lọc các bài viết KHÔNG có @LanAuKim và sắp xếp theo thời gian mới nhất
-    const filteredPosts = posts
-        .filter(post => {
-            // Nếu không có nội dung, cho phép hiển thị
-            if (!post.content) return true;
-            
-            // Nếu có nội dung, kiểm tra xem có chứa @LanAuKim không
-            // Trả về true nếu KHÔNG chứa @LanAuKim (ngược lại với logic cũ)
-            return !post.content.includes('@LanAuKim');
-        })
-        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    // Thay đổi cách sắp xếp thành ngẫu nhiên
+    posts.sort(() => Math.random() - 0.5);
     
-    // Hiển thị các bài đã lọc
-    filteredPosts.forEach(post => {
+    posts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
         post.comments.forEach(comment => {
@@ -611,7 +641,7 @@ function savePost(post) {
 
 
 // Khai báo biến global cho image modal
-let currentImageIndex = 0;
+let currentImageindex1 = 0;
 let currentImages = [];
 
 function addPostToDOM(post) {
@@ -765,37 +795,52 @@ function addPostToDOM(post) {
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
 function generateMediaGrid(mediaItems) {
-        if (!mediaItems.length) return '';
+    if (!mediaItems.length) return '';
 
-        const imageItems = mediaItems.filter(item => item.type === 'image');
-        const videoItems = mediaItems.filter(item => item.type === 'video');
+    const imageItems = mediaItems.filter(item => item.type === 'image');
+    const videoItems = mediaItems.filter(item => item.type === 'video');
 
-        let gridClass = getMediaGridClass(mediaItems.length);
-        let html = `<div class="post-media ${gridClass}">`;
+    let gridClass = getMediaGridClass(mediaItems.length);
+    let html = `<div class="post-media ${gridClass}">`;
 
-        // Xử lý videos
-        videoItems.forEach(video => {
-            html += `
-                <div class="video-container">
-                    <video src="${video.url}" controls></video>
+    // Xử lý videos với các thuộc tính bổ sung
+    videoItems.forEach(video => {
+        html += `
+            <div class="video-container">
+                <video 
+                    src="${video.url}" 
+                    controls
+                    preload="metadata"
+                    playsinline
+                    controlsList="nodownload"
+                    oncontextmenu="return false;"
+                    type="video/mp4"
+                    style="width: 100%; height: 100%; object-fit: contain;">
+                    <source src="${video.url}" type="video/mp4">
+                    <source src="${video.url}" type="video/webm">
+                    <source src="${video.url}" type="video/ogg">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="video-overlay">
+                    <div class="video-duration"></div>
                 </div>
-            `;
-        });
+            </div>
+        `;
+    });
 
-        // Xử lý tất cả ảnh, không giới hạn số lượng
-        const imageUrls = imageItems.map(img => img.url);
-        imageItems.forEach((image, index) => {
-            const imageData = encodeURIComponent(JSON.stringify(imageUrls));
-            html += `
-                <div class="image-container" onclick="openImageModal('${image.url}', ${index}, '${imageData}')">
-                    <img src="${image.url}" alt="Post image">
-                </div>
-            `;
-        });
+    // Xử lý images (giữ nguyên phần này)
+    imageItems.forEach((image, index) => {
+        const imageData = encodeURIComponent(JSON.stringify(imageItems.map(img => img.url)));
+        html += `
+            <div class="image-container" onclick="openImageModal('${image.url}', ${index}, '${imageData}')">
+                <img src="${image.url}" alt="Post image" loading="lazy">
+            </div>
+        `;
+    });
 
-        html += '</div>';
-        return html;
-    }
+    html += '</div>';
+    return html;
+}
 
     function getMediaGridClass(count) {
         if (count === 1) return 'single-image';
@@ -805,10 +850,10 @@ function generateMediaGrid(mediaItems) {
     }
 
 // Sửa lại hàm openImageModal
-window.openImageModal = function(imageUrl, index, imagesArray) {
+window.openImageModal = function(imageUrl, index1, imagesArray) {
     // Parse mảng ảnh từ string JSON
     currentImages = JSON.parse(imagesArray);
-    currentImageIndex = index;
+    currentImageindex1 = index1;
 
     const modal = document.createElement('div');
     modal.className = 'image-modal';
@@ -821,7 +866,7 @@ window.openImageModal = function(imageUrl, index, imagesArray) {
                     <button onclick="changeImage(-1)"><i class="fas fa-chevron-left"></i></button>
                     <button onclick="changeImage(1)"><i class="fas fa-chevron-right"></i></button>
                 </div>
-                <div class="modal-counter">${currentImageIndex + 1} / ${currentImages.length}</div>
+                <div class="modal-counter">${currentImageindex1 + 1} / ${currentImages.length}</div>
             ` : ''}
         </div>
     `;
@@ -836,12 +881,12 @@ window.openImageModal = function(imageUrl, index, imagesArray) {
 }
 
     window.changeImage = function(direction) {
-        currentImageIndex = (currentImageIndex + direction + currentImages.length) % currentImages.length;
+        currentImageindex1 = (currentImageindex1 + direction + currentImages.length) % currentImages.length;
         const modalImage = document.querySelector('.modal-image');
         const modalCounter = document.querySelector('.modal-counter');
         
-        modalImage.src = currentImages[currentImageIndex].url;
-        modalCounter.textContent = `${currentImageIndex + 1} / ${currentImages.length}`;
+        modalImage.src = currentImages[currentImageindex1].url;
+        modalCounter.textContent = `${currentImageindex1 + 1} / ${currentImages.length}`;
     }
 
     window.closeModal = function() {
@@ -880,11 +925,11 @@ window.openImageModal = function(imageUrl, index, imagesArray) {
 window.deleteComment = function(postId, commentId) {
     if (confirm('Bạn có chắc muốn xóa bình luận này?')) {
         const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-        const postIndex = posts.findIndex(p => p.id === postId);
+        const postindex1 = posts.findindex1(p => p.id === postId);
         
-        if (postIndex !== -1) {
+        if (postindex1 !== -1) {
             // Lọc bỏ comment cần xóa
-            posts[postIndex].comments = posts[postIndex].comments.filter(c => c.id !== commentId);
+            posts[postindex1].comments = posts[postindex1].comments.filter(c => c.id !== commentId);
             
             // Cập nhật localStorage
             localStorage.setItem('posts', JSON.stringify(posts));
@@ -897,7 +942,7 @@ window.deleteComment = function(postId, commentId) {
             
             // Cập nhật số lượng comments
             const commentCount = document.querySelector(`[data-post-id="${postId}"] .comment-count`);
-            commentCount.textContent = posts[postIndex].comments.length;
+            commentCount.textContent = posts[postindex1].comments.length;
         }
     }
 };
@@ -1312,8 +1357,8 @@ function setupCommentCollapse(postId) {
         });
         
         // Ẩn/hiện comments dựa trên số lượng hiện tại
-        comments.forEach((comment, index) => {
-            if (index >= visibleCommentsCount[postId]) {
+        comments.forEach((comment, index1) => {
+            if (index1 >= visibleCommentsCount[postId]) {
                 comment.classList.add('hidden');
             } else {
                 comment.classList.remove('hidden');
@@ -1366,8 +1411,8 @@ function setupReplyCollapse(commentId) {
             return timeB - timeA;
         });
         
-        replies.forEach((reply, index) => {
-            if (index >= visibleRepliesCount[commentId]) {
+        replies.forEach((reply, index1) => {
+            if (index1 >= visibleRepliesCount[commentId]) {
                 reply.classList.add('hidden');
             } else {
                 reply.classList.remove('hidden');
