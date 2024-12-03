@@ -189,69 +189,86 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
-mediaInput.addEventListener('change', function(e) {
+mediaInput.addEventListener('change', async function(e) {
     const files = Array.from(e.target.files);
     const maxSize = 10 * 1024 * 1024; // 10MB limit
     
-    files.forEach(file => {
+    for (const file of files) {
         // Kiểm tra kích thước file
         if (file.size > maxSize) {
             alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
-            return;
+            continue;
         }
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
+        try {
             const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
             
-            // Xử lý đặc biệt cho video
-if (mediaType === 'video' && !supportedVideoFormats.includes(file.type)) {
-    alert('Định dạng video không được hỗ trợ. Vui lòng sử dụng MP4, WebM hoặc Ogg.');
-    return;
-}
-                // Tạo một video element tạm thời để kiểm tra
-                const video = document.createElement('video');
-                video.src = e.target.result;
-                
-                video.onloadedmetadata = function() {
-                    selectedMedia.push({
-                        type: 'video',
-                        url: e.target.result,
-                        file: file,
-                        duration: video.duration,
-                        width: video.videoWidth,
-                        height: video.videoHeight
-                    });
-                    updateMediaPreview();
-                    updatePostButton();
-                };
+            // Kiểm tra định dạng video
+            if (mediaType === 'video' && !supportedVideoFormats.includes(file.type)) {
+                alert('Định dạng video không được hỗ trợ. Vui lòng sử dụng MP4, WebM hoặc Ogg.');
+                continue;
+            }
 
-                // Xử lý lỗi video
-                video.onerror = function() {
-                    alert('Không thể tải video. Vui lòng thử lại với file khác.');
-                };
+            // Đọc file dưới dạng DataURL
+            const dataUrl = await readFileAsDataURL(file);
+            
+            if (mediaType === 'video') {
+                // Xử lý video
+                const videoData = await getVideoMetadata(dataUrl);
+                selectedMedia.push({
+                    type: 'video',
+                    url: dataUrl,
+                    file: file,
+                    ...videoData
+                });
             } else {
-                // Xử lý cho ảnh như cũ
+                // Xử lý ảnh
                 selectedMedia.push({
                     type: 'image',
-                    url: e.target.result,
+                    url: dataUrl,
                     file: file
                 });
-                updateMediaPreview();
-                updatePostButton();
             }
-        };
-
-        // Đọc file dưới dạng DataURL
-        reader.readAsDataURL(file);
-        
-        // Xử lý lỗi đọc file
-        reader.onerror = function() {
-            alert('Lỗi khi đọc file. Vui lòng thử lại.');
-        };
-    });
+            
+            updateMediaPreview();
+            updatePostButton();
+            
+        } catch (error) {
+            console.error('Lỗi khi xử lý file:', error);
+            alert('Có lỗi xảy ra khi xử lý file. Vui lòng thử lại.');
+        }
+    }
 });
-
+// Hàm đọc file thành DataURL
+function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = e => reject(e);
+        reader.readAsDataURL(file);
+    });
+}
+// Hàm lấy metadata của video
+function getVideoMetadata(videoUrl) {
+    return new Promise((resolve, reject) => {
+        const video = document.createElement('video');
+        video.preload = 'metadata';
+        
+        video.onloadedmetadata = function() {
+            resolve({
+                duration: video.duration,
+                width: video.videoWidth,
+                height: video.videoHeight
+            });
+        };
+        
+        video.onerror = function() {
+            reject(new Error('Không thể đọc thông tin video'));
+        };
+        
+        video.src = videoUrl;
+    });
+}
     // Update Media Preview
 function updateMediaPreview() {
     mediaPreview.innerHTML = selectedMedia.map((media, index) => `
@@ -283,10 +300,11 @@ function updateMediaPreview() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-    async function createPost() {
-        const content = postInput.value.trim();
-        if (!content && selectedMedia.length === 0) return;
+async function createPost() {
+    const content = postInput.value.trim();
+    if (!content && selectedMedia.length === 0) return;
 
+    try {
         const postId = Date.now();
         const post = {
             id: postId,
@@ -297,12 +315,10 @@ function updateMediaPreview() {
                 avatar: document.querySelector('.profile-avatar img').src
             },
             media: selectedMedia,
-            reactions: {
-                likes: 0,
-                hearts: 0,
-                angry: 0
-            },
-            userReactions: {}, // Lưu reaction của từng user
+            likes: 0,
+            likes2: 0,
+            likedBy: [],
+            liked2By: [],
             comments: [],
             timestamp: new Date().toISOString()
         };
@@ -321,7 +337,17 @@ function updateMediaPreview() {
         mediaPreview.innerHTML = '';
         mediaInput.value = '';
         updatePostButton();
+        
+        // Cập nhật tab Media nếu cần
+        if (content.toLowerCase().includes('@lanyoujin')) {
+            updateMediaTab();
+        }
+        
+    } catch (error) {
+        console.error('Lỗi khi tạo bài đăng:', error);
+        alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại.');
     }
+}
 
 
     // Initialize Video Players
