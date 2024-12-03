@@ -803,23 +803,32 @@ function generateMediaGrid(mediaItems) {
     let gridClass = getMediaGridClass(mediaItems.length);
     let html = `<div class="post-media ${gridClass}">`;
 
-    // Xử lý videos
+    // Xử lý videos với các thuộc tính bổ sung
     videoItems.forEach(video => {
         html += `
             <div class="video-container">
-                <video src="${video.url}" 
-                       controls
-                       preload="metadata"
-                       playsinline
-                       controlsList="nodownload"
-                       oncontextmenu="return false;">
+                <video 
+                    src="${video.url}" 
+                    controls
+                    preload="metadata"
+                    playsinline
+                    controlsList="nodownload"
+                    oncontextmenu="return false;"
+                    type="video/mp4"
+                    style="width: 100%; height: 100%; object-fit: contain;">
+                    <source src="${video.url}" type="video/mp4">
+                    <source src="${video.url}" type="video/webm">
+                    <source src="${video.url}" type="video/ogg">
                     Your browser does not support the video tag.
                 </video>
+                <div class="video-overlay">
+                    <div class="video-duration"></div>
+                </div>
             </div>
         `;
     });
 
-    // Xử lý images
+    // Xử lý images (giữ nguyên phần này)
     imageItems.forEach((image, index) => {
         const imageData = encodeURIComponent(JSON.stringify(imageItems.map(img => img.url)));
         html += `
