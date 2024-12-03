@@ -155,7 +155,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const profileUsername = document.querySelector('.profile-username').textContent;
     const navItems = document.querySelectorAll('.nav-item');
     const contentSections = document.querySelectorAll('.content-section');
-    const supportedVideoFormats = ['video/mp4', 'video/webm', 'video/ogg'];
     
 
     let selectedMedia = [];
@@ -189,101 +188,79 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
-mediaInput.addEventListener('change', async function(e) {
+mediaInput.addEventListener('change', function(e) {
     const files = Array.from(e.target.files);
-    const maxSize = 10 * 1024 * 1024; // 10MB limit
-    
-    for (const file of files) {
-        // Kiểm tra kích thước file
-        if (file.size > maxSize) {
-            alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
-            continue;
-        }
-
-        try {
-            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
-            
-            // Kiểm tra định dạng video
-            if (mediaType === 'video' && !supportedVideoFormats.includes(file.type)) {
-                alert('Định dạng video không được hỗ trợ. Vui lòng sử dụng MP4, WebM hoặc Ogg.');
-                continue;
+    const promises = files.map(file => {
+        return new Promise((resolve, reject) => {
+            if (file.size > 10 * 1024 * 1024) {
+                alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
+                reject('File too large');
+                return;
             }
 
-            // Đọc file dưới dạng DataURL
-            const dataUrl = await readFileAsDataURL(file);
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+                
+                if (mediaType === 'video') {
+                    // Tạo video element tạm thời để lấy kích thước
+                    const video = document.createElement('video');
+                    video.src = e.target.result;
+                    
+                    video.onloadedmetadata = function() {
+                        resolve({
+                            type: mediaType,
+                            url: e.target.result,
+                            file: file,
+                            width: video.videoWidth,
+                            height: video.videoHeight
+                        });
+                    };
+                    
+                    video.onerror = function() {
+                        reject('Invalid video format');
+                    };
+                } else {
+                    resolve({
+                        type: mediaType,
+                        url: e.target.result,
+                        file: file
+                    });
+                }
+            };
             
-            if (mediaType === 'video') {
-                // Xử lý video
-                const videoData = await getVideoMetadata(dataUrl);
-                selectedMedia.push({
-                    type: 'video',
-                    url: dataUrl,
-                    file: file,
-                    ...videoData
-                });
-            } else {
-                // Xử lý ảnh
-                selectedMedia.push({
-                    type: 'image',
-                    url: dataUrl,
-                    file: file
-                });
-            }
+            reader.onerror = function() {
+                reject('File read error');
+            };
             
+            reader.readAsDataURL(file);
+        });
+    });
+
+    Promise.all(promises.filter(p => p))
+        .then(mediaItems => {
+            selectedMedia.push(...mediaItems);
             updateMediaPreview();
             updatePostButton();
-            
-        } catch (error) {
-            console.error('Lỗi khi xử lý file:', error);
-            alert('Có lỗi xảy ra khi xử lý file. Vui lòng thử lại.');
-        }
-    }
+        })
+        .catch(error => {
+            console.error('Error processing media:', error);
+        });
 });
-// Hàm đọc file thành DataURL
-function readFileAsDataURL(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result);
-        reader.onerror = e => reject(e);
-        reader.readAsDataURL(file);
-    });
-}
-// Hàm lấy metadata của video
-function getVideoMetadata(videoUrl) {
-    return new Promise((resolve, reject) => {
-        const video = document.createElement('video');
-        video.preload = 'metadata';
-        
-        video.onloadedmetadata = function() {
-            resolve({
-                duration: video.duration,
-                width: video.videoWidth,
-                height: video.videoHeight
-            });
-        };
-        
-        video.onerror = function() {
-            reject(new Error('Không thể đọc thông tin video'));
-        };
-        
-        video.src = videoUrl;
-    });
-}
+
     // Update Media Preview
-function updateMediaPreview() {
-    mediaPreview.innerHTML = selectedMedia.map((media, index) => `
-        <div class="preview-item">
-            ${media.type === 'image' 
-                ? `<img src="${media.url}" alt="Preview">`
-                : `<video src="${media.url}" controls muted playsinline>
-                     Your browser does not support the video tag.
-                   </video>`
-            }
-            <button class="remove-preview" onclick="removeMedia(${index})">×</button>
-        </div>
-    `).join('');
-    mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
-}
+    function updateMediaPreview() {
+        mediaPreview.innerHTML = selectedMedia.map((media, index1) => `
+            <div class="preview-item">
+                ${media.type === 'image' 
+                    ? `<img src="${media.url}" alt="Preview">`
+                    : `<video src="${media.url}" controls></video>`
+                }
+                <button class="remove-preview" onclick="removeMedia(${index1})">×</button>
+            </div>
+        `).join('');
+        mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
+    }
 
     // Remove Media
     window.removeMedia = function(index1) {
@@ -300,11 +277,10 @@ function updateMediaPreview() {
     // Create New Post
     postButton.addEventListener('click', createPost);
 
-async function createPost() {
-    const content = postInput.value.trim();
-    if (!content && selectedMedia.length === 0) return;
+    async function createPost() {
+        const content = postInput.value.trim();
+        if (!content && selectedMedia.length === 0) return;
 
-    try {
         const postId = Date.now();
         const post = {
             id: postId,
@@ -315,10 +291,12 @@ async function createPost() {
                 avatar: document.querySelector('.profile-avatar img').src
             },
             media: selectedMedia,
-            likes: 0,
-            likes2: 0,
-            likedBy: [],
-            liked2By: [],
+            reactions: {
+                likes: 0,
+                hearts: 0,
+                angry: 0
+            },
+            userReactions: {}, // Lưu reaction của từng user
             comments: [],
             timestamp: new Date().toISOString()
         };
@@ -337,17 +315,7 @@ async function createPost() {
         mediaPreview.innerHTML = '';
         mediaInput.value = '';
         updatePostButton();
-        
-        // Cập nhật tab Media nếu cần
-        if (content.toLowerCase().includes('@lanyoujin')) {
-            updateMediaTab();
-        }
-        
-    } catch (error) {
-        console.error('Lỗi khi tạo bài đăng:', error);
-        alert('Có lỗi xảy ra khi đăng bài. Vui lòng thử lại.');
     }
-}
 
 
     // Initialize Video Players
@@ -825,31 +793,34 @@ function addPostToDOM(post) {
 function generateMediaGrid(mediaItems) {
     if (!mediaItems.length) return '';
 
-    // Tách riêng xử lý ảnh và video
     const imageItems = mediaItems.filter(item => item.type === 'image');
     const videoItems = mediaItems.filter(item => item.type === 'video');
 
     let gridClass = getMediaGridClass(mediaItems.length);
     let html = `<div class="post-media ${gridClass}">`;
 
-    // Xử lý video trước
+    // Xử lý videos
     videoItems.forEach(video => {
         html += `
             <div class="video-container">
-                <video src="${video.url}" controls playsinline></video>
+                <video src="${video.url}" 
+                       controls
+                       preload="metadata"
+                       playsinline
+                       controlsList="nodownload"
+                       oncontextmenu="return false;">
+                    Your browser does not support the video tag.
+                </video>
             </div>
         `;
     });
 
-    // Xử lý ảnh với thông tin chi tiết
+    // Xử lý images
     imageItems.forEach((image, index) => {
         const imageData = encodeURIComponent(JSON.stringify(imageItems.map(img => img.url)));
         html += `
             <div class="image-container" onclick="openImageModal('${image.url}', ${index}, '${imageData}')">
                 <img src="${image.url}" alt="Post image" loading="lazy">
-                <div class="media-overlay">
-                    <span class="media-tag">Ảnh ${index + 1}/${imageItems.length}</span>
-                </div>
             </div>
         `;
     });
