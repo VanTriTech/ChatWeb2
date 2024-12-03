@@ -155,6 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const profileUsername = document.querySelector('.profile-username').textContent;
     const navItems = document.querySelectorAll('.nav-item');
     const contentSections = document.querySelectorAll('.content-section');
+    const supportedVideoFormats = ['video/mp4', 'video/webm', 'video/ogg'];
     
 
     let selectedMedia = [];
@@ -204,7 +205,10 @@ mediaInput.addEventListener('change', function(e) {
             const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
             
             // Xử lý đặc biệt cho video
-            if (mediaType === 'video') {
+if (mediaType === 'video' && !supportedVideoFormats.includes(file.type)) {
+    alert('Định dạng video không được hỗ trợ. Vui lòng sử dụng MP4, WebM hoặc Ogg.');
+    return;
+}
                 // Tạo một video element tạm thời để kiểm tra
                 const video = document.createElement('video');
                 video.src = e.target.result;
