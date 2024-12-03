@@ -445,12 +445,12 @@ function loadPosts() {
         postsContainer.innerHTML = '<div class="empty-state">Không có bài đăng nào chứa "@LanYouJin".</div>';
         return;
     }
-    
+        allMedia.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     filteredPosts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
     });
-    allMedia.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
     
     restoreCommentStates();
     restoreReactionStates();
