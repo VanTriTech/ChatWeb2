@@ -450,6 +450,7 @@ function loadPosts() {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
     });
+    allMedia.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
     restoreCommentStates();
     restoreReactionStates();
