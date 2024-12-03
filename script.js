@@ -431,28 +431,40 @@ function restoreCommentStates() {
     });
 }
 
+// Sửa lại hàm loadPosts
 function loadPosts() {
     const posts = JSON.parse(localStorage.getItem('posts') || '[]');
-    
-    // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Lọc các bài đăng có chứa "@LanYouJin" trong nội dung chính
-    const filteredPosts = posts.filter(post => post.content && post.content.toLowerCase().includes("@lanyoujin"));
+    // Lọc posts theo điều kiện
+    const filteredPosts = posts.filter(post => {
+        // Lọc bỏ posts có @meme
+        if (post.content?.includes("@meme")) return false;
+        
+        // Kiểm tra xem có phải là post của LanYouJin không
+        const isLanYouJinPost = post.content?.toLowerCase().includes("@lanyoujin");
+        
+        // Nếu đang ở tab Media, chỉ hiển thị posts của LanYouJin có media
+        const mediaTab = document.querySelector('#media-section.active');
+        if (mediaTab) {
+            return isLanYouJinPost && post.media?.length > 0;
+        }
+        
+        return true; // Hiển thị tất cả posts không có @meme ở tab Timeline
+    });
     
-    // Sắp xếp các bài viết mới nhất lên đầu
-    filteredPosts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    // Xáo trộn mảng posts bằng thuật toán Fisher-Yates
+    filteredPosts.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
-    // Nếu không có bài nào, hiển thị thông báo
-    if (filteredPosts.length === 0) {
-        postsContainer.innerHTML = '<div class="empty-state">Không có bài đăng nào chứa "@LanYouJin".</div>';
-        return;
-    }
-    
-    // Thêm các bài đăng đã lọc vào DOM
+    // Thêm posts vào DOM
     filteredPosts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
+        post.comments?.forEach(comment => {
+            if (comment.replies?.length > 0) {
+                setupReplyCollapse(comment.id);
+            }
+        });
     });
     
     restoreCommentStates();
