@@ -754,37 +754,40 @@ function addPostToDOM(post) {
 
 // Xóa định nghĩa cũ của generateMediaGrid và chỉ giữ lại phiên bản này
 function generateMediaGrid(mediaItems) {
-        if (!mediaItems.length) return '';
+    if (!mediaItems.length) return '';
 
-        const imageItems = mediaItems.filter(item => item.type === 'image');
-        const videoItems = mediaItems.filter(item => item.type === 'video');
+    // Tách riêng xử lý ảnh và video
+    const imageItems = mediaItems.filter(item => item.type === 'image');
+    const videoItems = mediaItems.filter(item => item.type === 'video');
 
-        let gridClass = getMediaGridClass(mediaItems.length);
-        let html = `<div class="post-media ${gridClass}">`;
+    let gridClass = getMediaGridClass(mediaItems.length);
+    let html = `<div class="post-media ${gridClass}">`;
 
-        // Xử lý videos
-        videoItems.forEach(video => {
-            html += `
-                <div class="video-container">
-                    <video src="${video.url}" controls></video>
+    // Xử lý video trước
+    videoItems.forEach(video => {
+        html += `
+            <div class="video-container">
+                <video src="${video.url}" controls playsinline></video>
+            </div>
+        `;
+    });
+
+    // Xử lý ảnh với thông tin chi tiết
+    imageItems.forEach((image, index) => {
+        const imageData = encodeURIComponent(JSON.stringify(imageItems.map(img => img.url)));
+        html += `
+            <div class="image-container" onclick="openImageModal('${image.url}', ${index}, '${imageData}')">
+                <img src="${image.url}" alt="Post image" loading="lazy">
+                <div class="media-overlay">
+                    <span class="media-tag">Ảnh ${index + 1}/${imageItems.length}</span>
                 </div>
-            `;
-        });
+            </div>
+        `;
+    });
 
-        // Xử lý tất cả ảnh, không giới hạn số lượng
-        const imageUrls = imageItems.map(img => img.url);
-        imageItems.forEach((image, index1) => {
-            const imageData = encodeURIComponent(JSON.stringify(imageUrls));
-            html += `
-                <div class="image-container" onclick="openImageModal('${image.url}', ${index1}, '${imageData}')">
-                    <img src="${image.url}" alt="Post image">
-                </div>
-            `;
-        });
-
-        html += '</div>';
-        return html;
-    }
+    html += '</div>';
+    return html;
+}
 
     function getMediaGridClass(count) {
         if (count === 1) return 'single-image';
