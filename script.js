@@ -437,8 +437,8 @@ function loadPosts() {
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Lọc các bài đăng có chứa "@LanYouJin" trong nội dung chính của post (không tính comments)
-    const filteredPosts = posts.filter(post => post.content && post.content.toLowerCase().includes("@lanyoujin"));
+    // Lọc các bài đăng có chứa "@LanYouJin" trong nội dung chính của post
+    const filteredPosts = posts.filter(post => post.content && post.content.includes("@LanYouJin"));
     
     // Thay đổi cách sắp xếp thành ngẫu nhiên
     allMedia.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
@@ -446,6 +446,15 @@ function loadPosts() {
     filteredPosts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
+        
+        // Kiểm tra bình luận có chứa "@LanYouJin"
+        const hasKeywordInComments = post.comments.some(comment => comment.content.includes("@LanYouJin"));
+        
+        // Nếu không có từ khóa trong bình luận, không hiển thị bài đăng
+        if (!hasKeywordInComments) {
+            return; // Bỏ qua bài đăng này
+        }
+        
         post.comments.forEach(comment => {
             if (comment.replies && comment.replies.length > 0) {
                 setupReplyCollapse(comment.id);
