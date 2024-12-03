@@ -188,42 +188,81 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Media Upload Handler
-    mediaInput.addEventListener('change', function(e) {
-        const files = Array.from(e.target.files);
-        files.forEach(file => {
-            if (file.size > 10 * 1024 * 1024) { // 10MB limit
-                alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
-                return;
-            }
+mediaInput.addEventListener('change', function(e) {
+    const files = Array.from(e.target.files);
+    const maxSize = 10 * 1024 * 1024; // 10MB limit
+    
+    files.forEach(file => {
+        // Kiểm tra kích thước file
+        if (file.size > maxSize) {
+            alert('File quá lớn. Vui lòng chọn file nhỏ hơn 10MB.');
+            return;
+        }
 
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const mediaType = file.type.startsWith('image/') ? 'image' : 'video';
+            
+            // Xử lý đặc biệt cho video
+            if (mediaType === 'video') {
+                // Tạo một video element tạm thời để kiểm tra
+                const video = document.createElement('video');
+                video.src = e.target.result;
+                
+                video.onloadedmetadata = function() {
+                    selectedMedia.push({
+                        type: 'video',
+                        url: e.target.result,
+                        file: file,
+                        duration: video.duration,
+                        width: video.videoWidth,
+                        height: video.videoHeight
+                    });
+                    updateMediaPreview();
+                    updatePostButton();
+                };
+
+                // Xử lý lỗi video
+                video.onerror = function() {
+                    alert('Không thể tải video. Vui lòng thử lại với file khác.');
+                };
+            } else {
+                // Xử lý cho ảnh như cũ
                 selectedMedia.push({
-                    type: mediaType,
+                    type: 'image',
                     url: e.target.result,
                     file: file
                 });
                 updateMediaPreview();
                 updatePostButton();
             }
-            reader.readAsDataURL(file);
-        });
+        };
+
+        // Đọc file dưới dạng DataURL
+        reader.readAsDataURL(file);
+        
+        // Xử lý lỗi đọc file
+        reader.onerror = function() {
+            alert('Lỗi khi đọc file. Vui lòng thử lại.');
+        };
     });
+});
 
     // Update Media Preview
-    function updateMediaPreview() {
-        mediaPreview.innerHTML = selectedMedia.map((media, index1) => `
-            <div class="preview-item">
-                ${media.type === 'image' 
-                    ? `<img src="${media.url}" alt="Preview">`
-                    : `<video src="${media.url}" controls></video>`
-                }
-                <button class="remove-preview" onclick="removeMedia(${index1})">×</button>
-            </div>
-        `).join('');
-        mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
-    }
+function updateMediaPreview() {
+    mediaPreview.innerHTML = selectedMedia.map((media, index) => `
+        <div class="preview-item">
+            ${media.type === 'image' 
+                ? `<img src="${media.url}" alt="Preview">`
+                : `<video src="${media.url}" controls muted playsinline>
+                     Your browser does not support the video tag.
+                   </video>`
+            }
+            <button class="remove-preview" onclick="removeMedia(${index})">×</button>
+        </div>
+    `).join('');
+    mediaPreview.style.display = selectedMedia.length ? 'grid' : 'none';
+}
 
     // Remove Media
     window.removeMedia = function(index1) {
