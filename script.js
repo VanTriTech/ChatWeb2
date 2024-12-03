@@ -437,10 +437,13 @@ function loadPosts() {
     // Xóa hết nội dung cũ trong container
     postsContainer.innerHTML = '';
     
-    // Thay đổi cách sắp xếp thành ngẫu nhiên
-    posts.sort(() => Math.random() - 0.5);
+    // Lọc các bài đăng có chứa "@LanYouJin" trong nội dung chính của post (không tính comments)
+    const filteredPosts = posts.filter(post => post.content && post.content.toLowerCase().includes("@lanyoujin"));
     
-    posts.forEach(post => {
+    // Thay đổi cách sắp xếp thành ngẫu nhiên
+    allMedia.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    
+    filteredPosts.forEach(post => {
         addPostToDOM(post);
         setupCommentCollapse(post.id);
         post.comments.forEach(comment => {
